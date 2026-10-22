@@ -206,6 +206,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
 
 <!-- ---------- Mode 1: Add products ---------- -->
 <div class="view" id="view-products">
+  <!-- Top row: camera on the left, name/price form on the right. The saved list sits below, full width. -->
   <div class="columns">
     <div class="col">
       <div class="card">
@@ -218,6 +219,8 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
         <button class="btn" id="productsCamBtn" type="button">Start camera</button>
         <div class="status" id="productsStatus"></div>
       </div>
+    </div>
+    <div class="col">
       <div class="card">
         <h2>2. Name and price</h2>
         <div class="notice info" id="editNotice"></div>
@@ -232,14 +235,12 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
         <button class="btn grey" id="clearFormBtn" type="button">Clear</button>
       </div>
     </div>
-    <div class="col">
-      <div class="card">
-        <h2>Saved products (<span id="prodCount">0</span>)</h2>
-        <input type="search" id="prodSearch" placeholder="Search by name or number" autocomplete="off">
-        <div id="prodList"></div>
-      </div>
-    </div>
   </div>
+    <div class="card">
+      <h2>Saved products (<span id="prodCount">0</span>)</h2>
+      <input type="search" id="prodSearch" placeholder="Search by name or number" autocomplete="off">
+      <div id="prodList"></div>
+    </div>
 </div>
 
 <!-- ---------- Settings, backup, help, log ---------- -->
@@ -329,7 +330,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   'use strict';
 
   var APP_NAME = 'kids-register';          // used in the backup file name
-  var APP_VERSION = '1.4';      // filled in automatically by the build script
+  var APP_VERSION = '1.5';      // filled in automatically by the build script
   var DATA_KEY = 'kidsRegister.data';      // where products + settings live in the browser
   var DEFAULT_FOOTER = 'Thank you for shopping with us!\nCome back soon!';
   var LOG_KEY = 'kidsRegister.log';        // where the problem report lives in the browser
@@ -1215,6 +1216,10 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
 
     // Settings screen
     $('saveSettingsBtn').onclick = saveSettings;
+    // Enter saves the settings too (the receipt text box is multi-line, so Enter there starts a new line).
+    ['sShop', 'sCur'].forEach(function (id) {
+      $(id).onkeydown = function (ev) { if (ev.keyCode === 13) { ev.preventDefault(); saveSettings(); } };
+    });
     $('exportBtn').onclick = exportBackup;
     $('importFile').onchange = function () {
       importBackup(this.files && this.files[0]);
