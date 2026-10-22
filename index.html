@@ -576,23 +576,31 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   }
 
   /* ---------------------------------------------------------------------------
-     5. CAMERA SCANNER (uses the ZXing library)
+     5. CAMERA SCANNER (shows the camera, then looks for barcodes with ZXing)
      Only one camera is on at a time. When a barcode is read, the function for the current
      screen is called with the number.
      --------------------------------------------------------------------------- */
   var Scanner = {
-    reader: null,
     token: 0,            // changes every time we start/stop, so late replies from old sessions are ignored
     mode: null,          // 'register' or 'products' while the camera is on
     state: 'off',        // 'off', 'starting' or 'on'
+    stream: null,        // the live camera feed
+    video: null,         // the <video> element showing the feed
+    timer: null,         // timer for the next "look at the picture"
+    detector: null,      // the browser's own barcode finder (only some browsers have one)
+    zxing: null,         // the ZXing barcode finder
+    canvas: null,        // hidden drawing area used to grab pictures from the video
+    tick: 0,
+    loggedProblem: false,
     lastCode: '',
     lastTime: 0,
 
     start: function (mode) {
       this.stop(true);
       var self = this;
-      var video = $(mode + 'Video');
+      var token = ++this.token;
       this.mode = mode;
+      this.video = $(mode + 'Video');
       Log.add('INFO', 'Camera start requested (' + mode + ' screen)');
 
       if (typeof ZXing === 'undefined') {
@@ -601,41 +609,37 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         var why = (window.isSecureContext === false)
           ? 'The camera only works on a secure page (a web address starting with https://). You can still type barcode numbers.'
-          : 'This browser cannot use the camera. Try Safari. You can still type barcode numbers.';
+          : 'This browser cannot use the camera. Try Safari or Chrome. You can still type barcode numbers.';
         return this.fail(why, 'getUserMedia unavailable, secureContext=' + window.isSecureContext);
       }
 
       this.state = 'starting';
       updateCameraUI('Starting the camera... tap Allow if asked.');
-      var token = ++this.token;
 
-      try {
-        // Only look for the product barcode types, which makes reading faster and more reliable.
-        var hints = new Map();
-        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-          ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E
-        ]);
-        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-        this.reader = new ZXing.BrowserMultiFormatReader(hints, 250);   // look at the picture 4 times a second
-      } catch (e) {
-        return this.fail('The barcode reader could not start.', 'Reader creation failed: ' + e.name + ' ' + e.message);
-      }
-
-      var constraints = { audio: false, video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } };
-      this.reader.decodeFromConstraints(constraints, video, function (result) {
-        // This is called for every look; "result" only exists when a barcode was found.
-        if (result && token === self.token) { self.found(result.getText()); }
-      }).then(function () {
-        if (token !== self.token) { return; }
-        self.state = 'on';
-        Log.add('INFO', 'Camera is on');
-        updateCameraUI('Camera is on. Hold a barcode in front of it.');
+      // Step 1: ask for the camera (the back camera if there is one).
+      this.openCamera().then(function (stream) {
+        if (token !== self.token) { self.stopStream(stream); return; }   // user already pressed Stop
+        self.stream = stream;
+        var tracks = stream.getVideoTracks ? stream.getVideoTracks() : [];
+        var s = (tracks[0] && tracks[0].getSettings) ? tracks[0].getSettings() : {};
+        Log.add('INFO', 'Camera opened: ' + (s.width || '?') + 'x' + (s.height || '?') + ', facing=' + (s.facingMode || 'unknown'));
+        // Step 2: show it in the video box.
+        var v = self.video;
+        v.muted = true;
+        v.setAttribute('playsinline', '');
+        v.srcObject = stream;
+        try {
+          var p = v.play();
+          if (p && p.catch) { p.catch(function (e) { Log.add('WARN', 'video.play() was refused: ' + (e && e.name)); }); }
+        } catch (e2) { Log.add('WARN', 'video.play() failed: ' + e2.name); }
+        // Step 3: wait until the first picture arrives, then start looking for barcodes.
+        self.waitForPicture(token, new Date().getTime());
       }).catch(function (e) {
         if (token !== self.token) { return; }
         var name = (e && e.name) || 'Error';
         var msg;
         if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') {
-          msg = 'The camera is blocked. On the iPad open Settings > Safari > Camera, choose "Ask" or "Allow", then reload this page.';
+          msg = 'The camera is blocked. Allow camera access for this page (iPad: Settings > Safari > Camera; computer: click the camera icon in the address bar), then reload the page.';
         } else if (name === 'NotFoundError' || name === 'OverconstrainedError') {
           msg = 'No camera was found on this device. You can still type barcode numbers.';
         } else if (name === 'NotReadableError' || name === 'AbortError') {
@@ -647,10 +651,130 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       });
     },
 
+    // Ask for the back camera. If that is refused for a technical reason (many computers have only
+    // a front webcam), ask again for "any camera".
+    openCamera: function () {
+      var md = navigator.mediaDevices;
+      return md.getUserMedia({ audio: false, video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } })
+        .catch(function (e) {
+          var name = e && e.name;
+          if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError' || name === 'NotReadableError') { throw e; }
+          Log.add('WARN', 'First camera request failed (' + name + '), trying again with simple settings');
+          return md.getUserMedia({ audio: false, video: true });
+        });
+    },
+
+    // Wait (up to 8 seconds) until the video really shows a picture.
+    waitForPicture: function (token, startedAt) {
+      var self = this;
+      if (token !== this.token) { return; }
+      var v = this.video;
+      if (v.videoWidth > 0 && v.videoHeight > 0 && v.readyState >= 2) {
+        this.beginScanning(token);
+        return;
+      }
+      if (new Date().getTime() - startedAt > 8000) {
+        this.fail('The camera started but shows no picture. Close other apps or tabs that use the camera, then try again.',
+          'No picture after 8 seconds: readyState=' + v.readyState + ', size=' + v.videoWidth + 'x' + v.videoHeight + ', paused=' + v.paused);
+        return;
+      }
+      this.timer = setTimeout(function () { self.waitForPicture(token, startedAt); }, 100);
+    },
+
+    beginScanning: function (token) {
+      var v = this.video;
+      this.state = 'on';
+      this.tick = 0;
+      this.loggedProblem = false;
+      // Prepare the barcode finders. ZXing works everywhere; a built-in finder is used as well when the browser has one.
+      var hints = new Map();
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+        ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E
+      ]);
+      hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+      this.zxing = new ZXing.MultiFormatReader();
+      this.zxing.setHints(hints);
+      this.detector = null;
+      if (window.BarcodeDetector) {
+        try { this.detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] }); } catch (e) { this.detector = null; }
+      }
+      this.canvas = document.createElement('canvas');
+      // Ask the camera to keep focusing (ignored by browsers that cannot do it).
+      try {
+        var track = this.stream.getVideoTracks()[0];
+        if (track && track.applyConstraints) { track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function () { /* optional */ }); }
+      } catch (e3) { /* optional */ }
+      Log.add('INFO', 'Camera is showing a picture (' + v.videoWidth + 'x' + v.videoHeight + '); built-in finder: ' + !!this.detector);
+      updateCameraUI('Camera is on. Hold a barcode in front of it.');
+      this.loop(token);
+    },
+
+    // Look at the picture about 8 times a second, one look at a time.
+    loop: function (token) {
+      var self = this;
+      if (token !== this.token) { return; }
+      this.lookOnce().then(function (text) {
+        if (token !== self.token) { return; }
+        if (text) { self.found(text); }
+        self.timer = setTimeout(function () { self.loop(token); }, 120);
+      });
+    },
+
+    // One look: alternates between the browser's finder (if any) and ZXing. Always resolves (never fails).
+    lookOnce: function () {
+      var self = this;
+      var n = this.tick++;
+      if (this.detector && n % 2 === 0) {
+        return this.detector.detect(this.video).then(function (codes) {
+          return (codes && codes.length) ? codes[0].rawValue : null;
+        }).catch(function (e) {
+          if (!self.loggedProblem) { self.loggedProblem = true; Log.add('WARN', 'Built-in finder failed, using ZXing only: ' + (e && e.name)); }
+          self.detector = null;
+          return null;
+        });
+      }
+      return new Promise(function (resolve) {
+        var text = null;
+        try { text = self.zxingLook(n); } catch (e) {
+          if (!self.loggedProblem) { self.loggedProblem = true; Log.add('ERROR', 'ZXing look failed: ' + (e && e.name) + ' ' + (e && e.message)); }
+        }
+        resolve(text);
+      });
+    },
+
+    // Copy part of the video picture to a hidden canvas, turn it to grey, and give it to ZXing.
+    // Three different looks are rotated: the middle strip, the whole picture, and a taller strip
+    // with a different black/white method. This finds barcodes at many sizes and distances.
+    zxingLook: function (n) {
+      var v = this.video, vw = v.videoWidth, vh = v.videoHeight;
+      if (!vw || !vh) { return null; }
+      var kind = n % 3;
+      var region = (kind === 1) ? { x: 0, y: 0, w: vw, h: vh }
+        : { x: 0, y: Math.round(vh * (kind === 0 ? 0.3 : 0.2)), w: vw, h: Math.round(vh * (kind === 0 ? 0.4 : 0.6)) };
+      var scale = Math.min(1, 1280 / region.w);
+      var cw = Math.round(region.w * scale), ch = Math.round(region.h * scale);
+      this.canvas.width = cw; this.canvas.height = ch;
+      var ctx = this.canvas.getContext('2d');
+      ctx.drawImage(v, region.x, region.y, region.w, region.h, 0, 0, cw, ch);
+      var rgba = ctx.getImageData(0, 0, cw, ch).data;
+      var grey = new Uint8ClampedArray(cw * ch);
+      for (var i = 0, j = 0; j < grey.length; i += 4, j++) { grey[j] = (rgba[i] * 77 + rgba[i + 1] * 150 + rgba[i + 2] * 29) >> 8; }
+      var source = new ZXing.RGBLuminanceSource(grey, cw, ch);
+      var binarizer = (kind === 2) ? new ZXing.GlobalHistogramBinarizer(source) : new ZXing.HybridBinarizer(source);
+      try { return this.zxing.decode(new ZXing.BinaryBitmap(binarizer)).getText(); }
+      catch (e) { return null; }       // "nothing found in this picture" is normal and not an error
+    },
+
+    stopStream: function (stream) {
+      try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { /* ignore */ }
+    },
+
     // Turn the camera off. quiet=true skips the screen update (used when restarting).
     stop: function (quiet) {
       this.token++;
-      if (this.reader) { try { this.reader.reset(); } catch (e) { /* ignore */ } this.reader = null; }
+      if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+      if (this.stream) { this.stopStream(this.stream); this.stream = null; }
+      if (this.video) { try { this.video.srcObject = null; } catch (e) { /* ignore */ } }
       var wasOn = this.state !== 'off';
       this.state = 'off';
       if (!quiet) {
