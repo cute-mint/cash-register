@@ -331,7 +331,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   'use strict';
 
   var APP_NAME = 'kids-register';          // used in the backup file name
-  var APP_VERSION = '1.6';      // filled in automatically by the build script
+  var APP_VERSION = '1.7';      // filled in automatically by the build script
   var DATA_KEY = 'kidsRegister.data';      // where products + settings live in the browser
   var DEFAULT_FOOTER = 'Thank you for shopping with us!\nCome back soon!';
   var LOG_KEY = 'kidsRegister.log';        // where the problem report lives in the browser
@@ -463,6 +463,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       head.push('Screen: ' + screen.width + 'x' + screen.height + ' (window ' + window.innerWidth + 'x' + window.innerHeight + ', pixel ratio ' + (window.devicePixelRatio || 1) + ')');
       head.push('Page type: ' + location.protocol + ' (secure page: ' + (window.isSecureContext === undefined ? 'unknown' : window.isSecureContext) + ')');
       head.push('Camera available in browser: ' + !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
+      head.push('Home Screen app: ' + (window.navigator.standalone === true) + ', print as PDF: ' + (typeof printNeedsPdf === 'function' ? printNeedsPdf() : 'n/a'));
       head.push('Barcode reader loaded: ' + (typeof ZXing !== 'undefined'));
       head.push('Can save data: ' + Store.canSave);
       head.push('Saved products: ' + Object.keys(Store.data.products).length);
@@ -928,7 +929,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   }
 
   /* ---- Receipt as PDF ----
-     Safari's print command does not work in an app added to the Home Screen. So there the receipt is made as a
+     On iOS 26 or newer, Safari's print command does not work in an app added to the Home Screen. So there the receipt is made as a
      small PDF file instead and handed to the iPad's share sheet, which has "Print" and "Save to Files".
      The PDF is written by hand here (plain text in the Courier font), so no extra library is needed. */
   var PDF_COLS = 38;                       // characters per line on the 80 mm wide receipt
@@ -938,6 +939,19 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     return window.navigator.standalone === true ||
       !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
   }
+
+  // True on iPhones/iPads (newer iPads pretend to be Macs, so touch support gives them away).
+  function isIOS() {
+    var ua = navigator.userAgent || '';
+    return /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  }
+  // Home Screen apps can print directly on older iOS versions, but not from iOS 26 on. The iOS version is
+  // hidden in a Home Screen app, so we test for a browser feature that arrived with iOS 26 (CSS anchor positioning).
+  function isNewIOS() {
+    try { return !!(window.CSS && CSS.supports && CSS.supports('anchor-name', '--x')); } catch (e) { return false; }
+  }
+  // Should "Print receipt" make a PDF for the share sheet instead of printing directly?
+  function printNeedsPdf() { return isIOS() && isStandalone() && isNewIOS(); }
 
   function spaces(n) { var s = ''; while (s.length < n) { s += ' '; } return s; }
   function centerText(s) { return spaces(Math.max(0, Math.floor((PDF_COLS - s.length) / 2))) + s; }
@@ -1040,7 +1054,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       toast('The receipt could not be created.', true);
       return;
     }
-    Log.add('INFO', 'Receipt PDF created (' + bytes.length + ' bytes), standalone=' + isStandalone());
+    Log.add('INFO', 'Receipt PDF created (' + bytes.length + ' bytes), standalone=' + isStandalone() + ', newIOS=' + isNewIOS());
     var file = null;
     try { file = new File([blob], filename, { type: 'application/pdf' }); } catch (e1) { file = null; }
     if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1108,7 +1122,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       if (line.replace(/\s/g, '') !== '') { r.appendChild(el('div', 'center', line)); }
     });
 
-    if (isStandalone()) { shareReceiptPdf(); return; }   // printing does not work in a Home Screen app
+    if (printNeedsPdf()) { shareReceiptPdf(); return; }   // printing does not work in a Home Screen app on iOS 26 or newer
     Log.add('INFO', 'Print receipt: ' + items + ' items, ' + cart.length + ' lines');
     try { window.print(); } catch (e) {
       Log.add('ERROR', 'Printing failed: ' + e.name);
