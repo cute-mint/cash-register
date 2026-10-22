@@ -11,56 +11,63 @@
 html, body { margin: 0; padding: 0; }
 body {
   font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 18px; color: #2b2b3a; background: #fff6df; -webkit-text-size-adjust: 100%;
+  font-size: 18px; color: #1e293b; background: #f4f6fb; -webkit-text-size-adjust: 100%;
 }
 h1 { font-size: 26px; margin: 0; color: #fff; }
 h2 { font-size: 22px; margin: 0 0 12px 0; }
 h3 { font-size: 18px; margin: 18px 0 8px 0; }
 p { line-height: 1.4; margin: 0 0 10px 0; }
-.small { font-size: 15px; color: #5b5b6e; }
+.small { font-size: 15px; color: #64748b; }
 
 /* Top bar with the three tabs */
-.topbar { background: #2a9d8f; padding: 12px 16px 0 16px; }
+.topbar { background: #4f46e5; background: -webkit-linear-gradient(left, #4f46e5, #7c3aed); background: linear-gradient(90deg, #4f46e5, #7c3aed); padding: 12px 16px 0 16px; }
+.toprow { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-justify-content: space-between; justify-content: space-between; -webkit-align-items: center; align-items: center; }
+.ver { color: rgba(255,255,255,.85); font-size: 15px; font-weight: bold; background: rgba(255,255,255,.18); border-radius: 10px; padding: 4px 10px; }
 .tabs { display: -webkit-box; display: -webkit-flex; display: flex; margin-top: 10px; }
 .tab {
   -webkit-flex: 1; flex: 1; font-size: 19px; font-weight: bold; padding: 14px 6px; border: 0;
-  background: #238579; color: #e8fffb; border-radius: 12px 12px 0 0; margin-right: 4px; min-height: 54px;
+  background: rgba(255,255,255,.16); color: #ffffff; border-radius: 12px 12px 0 0; margin-right: 4px; min-height: 54px;
 }
 .tab:last-child { margin-right: 0; }
-.tab.active { background: #fff6df; color: #1d6b61; }
+.tab.active { background: #f4f6fb; color: #4338ca; }
 
 .view { display: none; padding: 14px; }
 .view.active { display: block; }
 .columns { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: 0 -7px; }
 .col { -webkit-flex: 1 1 340px; flex: 1 1 340px; margin: 0 7px 14px 7px; min-width: 0; }
-.card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,.12); margin-bottom: 14px; }
+.card { background: #fff; border-radius: 18px; padding: 16px; box-shadow: 0 4px 14px rgba(30,41,59,.08); margin-bottom: 14px; }
 .col .card:last-child { margin-bottom: 0; }
 
 /* Buttons and inputs */
 button { font-family: inherit; }
 .btn {
   font-size: 19px; font-weight: bold; border: 0; border-radius: 12px; padding: 12px 18px; min-height: 52px;
-  color: #fff; background: #2a9d8f; margin: 0 8px 8px 0; cursor: pointer; display: inline-block; text-align: center;
+  color: #fff; background: #4f46e5; margin: 0 8px 8px 0; cursor: pointer; display: inline-block; text-align: center;
 }
 .btn:active { opacity: .75; }
-.btn.orange { background: #f4821f; }
-.btn.red { background: #d64545; }
-.btn.grey { background: #7b7f93; }
+.btn.orange { background: #f97316; }
+.btn.red { background: #ef4444; }
+.btn.orange { background: #f97316; }
+.btn.grey { background: #64748b; }
 .btn.small-btn { font-size: 16px; min-height: 44px; padding: 8px 14px; }
 .btn[disabled] { opacity: .4; }
-input[type=text], input[type=search], input[type=tel] {
-  font-family: inherit; font-size: 20px; padding: 10px 12px; border: 2px solid #b9c2cc; border-radius: 10px;
-  width: 100%; min-height: 52px; background: #fff; color: #2b2b3a; -webkit-appearance: none; appearance: none;
+input[type=text], input[type=search], input[type=tel], textarea.field {
+  font-family: inherit; font-size: 20px; padding: 10px 12px; border: 2px solid #cbd5e1; border-radius: 10px;
+  width: 100%; min-height: 52px; background: #fff; color: #1e293b; -webkit-appearance: none; appearance: none;
 }
-input:focus { border-color: #2a9d8f; outline: none; }
+input:focus { border-color: #4f46e5; outline: none; }
 label { display: block; font-weight: bold; margin: 12px 0 5px 0; }
+textarea.field { min-height: 84px; resize: none; line-height: 1.3; }
+.btn-row { display: -webkit-box; display: -webkit-flex; display: flex; margin-bottom: 8px; }
+.btn-row .btn { -webkit-box-flex: 1; -webkit-flex: 1 1 0; flex: 1 1 0; margin: 0 8px 0 0; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; line-height: 1.2; }
+.btn-row .btn:last-child { margin-right: 0; }
 .row { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: flex-end; align-items: flex-end; }
 .row > .grow { -webkit-flex: 1; flex: 1; min-width: 0; margin-right: 8px; }
 .row .btn { margin-bottom: 0; margin-right: 0; }
 
 /* Camera box */
 .camera {
-  position: relative; width: 100%; height: 0; padding-bottom: 62%; background: #1f2430; border-radius: 12px;
+  position: relative; width: 100%; height: 0; padding-bottom: 62%; background: #0f172a; border-radius: 12px;
   overflow: hidden; margin-bottom: 10px;
 }
 .camera video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; -o-object-fit: cover; object-fit: cover; }
@@ -70,42 +77,42 @@ label { display: block; font-weight: bold; margin: 12px 0 5px 0; }
 .camera .aim { position: absolute; left: 12%; right: 12%; top: 50%; height: 2px; background: rgba(255,60,60,.85); display: none; }
 .camera.on .aim { display: block; }
 .camera.on .off-note { display: none; }
-.camera.flash { outline: 6px solid #3ecf6b; outline-offset: -6px; }
-.camera.flash-bad { outline: 6px solid #d64545; outline-offset: -6px; }
+.camera.flash { outline: 6px solid #22c55e; outline-offset: -6px; }
+.camera.flash-bad { outline: 6px solid #ef4444; outline-offset: -6px; }
 
-.status { min-height: 24px; margin: 4px 0 10px 0; font-size: 16px; color: #4a4a5a; }
-.status.error { color: #b02a2a; font-weight: bold; }
+.status { min-height: 24px; margin: 4px 0 10px 0; font-size: 16px; color: #475569; }
+.status.error { color: #dc2626; font-weight: bold; }
 .notice {
-  background: #ffe9e9; border: 2px solid #d64545; border-radius: 12px; padding: 12px; margin: 10px 0; display: none;
+  background: #fef2f2; border: 2px solid #ef4444; border-radius: 12px; padding: 12px; margin: 10px 0; display: none;
 }
 .notice.show { display: block; }
-.notice.info { background: #e8f6ff; border-color: #3a8fd1; }
+.notice.info { background: #eef2ff; border-color: #6366f1; }
 
 /* Shopping list */
-.cart-row { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; padding: 10px 0; border-bottom: 1px solid #e6e6ee; }
+.cart-row { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; padding: 10px 0; border-bottom: 1px solid #e2e8f0; }
 .cart-info { -webkit-flex: 1; flex: 1; min-width: 0; padding-right: 8px; }
 .cart-name { font-weight: bold; word-wrap: break-word; }
-.cart-each { font-size: 14px; color: #6a6a7c; }
+.cart-each { font-size: 14px; color: #64748b; }
 .qty { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
-.qty button { width: 46px; height: 46px; font-size: 26px; border: 0; border-radius: 23px; background: #dff3f0; color: #1d6b61; padding: 0; }
+.qty button { width: 46px; height: 46px; font-size: 26px; border: 0; border-radius: 23px; background: #eef2ff; color: #4338ca; padding: 0; }
 .qty span { min-width: 34px; text-align: center; font-weight: bold; font-size: 20px; }
 .cart-sum { min-width: 84px; text-align: right; font-weight: bold; }
-.rm { width: 44px; height: 44px; border: 0; background: transparent; font-size: 26px; color: #b02a2a; }
-.empty { text-align: center; color: #7b7f93; padding: 26px 8px; }
+.rm { width: 44px; height: 44px; border: 0; background: transparent; font-size: 26px; color: #dc2626; }
+.empty { text-align: center; color: #64748b; padding: 26px 8px; }
 .total { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-justify-content: space-between; justify-content: space-between; font-size: 30px; font-weight: bold; padding: 14px 0 12px 0; }
 
 /* Product list */
-.prod-row { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; padding: 10px 0; border-bottom: 1px solid #e6e6ee; }
+.prod-row { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; padding: 10px 0; border-bottom: 1px solid #e2e8f0; }
 .prod-main { -webkit-flex: 1; flex: 1; min-width: 0; padding-right: 8px; }
 .prod-name { font-weight: bold; word-wrap: break-word; }
-.prod-code { font-size: 14px; color: #6a6a7c; }
+.prod-code { font-size: 14px; color: #64748b; }
 .prod-price { font-weight: bold; margin-right: 10px; }
 .prod-row .btn { margin: 0 0 0 6px; }
 
 /* Help / log */
 textarea.log {
-  width: 100%; height: 220px; font-family: Menlo, Courier, monospace; font-size: 13px; border: 2px solid #b9c2cc;
-  border-radius: 10px; padding: 8px; background: #fafafa; color: #222;
+  width: 100%; height: 220px; font-family: Menlo, Courier, monospace; font-size: 13px; border: 2px solid #cbd5e1;
+  border-radius: 10px; padding: 8px; background: #f8fafc; color: #222;
 }
 ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
 .file-btn { position: relative; overflow: hidden; }
@@ -114,11 +121,11 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
 /* Pop-up message */
 #toast {
   position: fixed; left: 50%; bottom: 24px; -webkit-transform: translateX(-50%); transform: translateX(-50%);
-  background: #2b2b3a; color: #fff; padding: 14px 22px; border-radius: 14px; font-size: 18px; max-width: 90%;
+  background: #1e293b; color: #fff; padding: 14px 22px; border-radius: 14px; font-size: 18px; max-width: 90%;
   opacity: 0; pointer-events: none; -webkit-transition: opacity .25s; transition: opacity .25s; z-index: 50; text-align: center;
 }
 #toast.show { opacity: .95; }
-#toast.bad { background: #b02a2a; }
+#toast.bad { background: #dc2626; }
 
 /* ---------- Receipt: hidden on screen, the only thing shown when printing ---------- */
 #receipt { display: none; }
@@ -140,7 +147,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
 
 <!-- ============================ SCREEN LAYOUT ============================ -->
 <div class="topbar">
-  <h1>&#128722; Kids Cash Register</h1>
+  <div class="toprow"><h1>&#128722; Kids Cash Register</h1><span class="ver" id="verTag"></span></div>
   <div class="tabs">
     <button class="tab active" id="tab-register" type="button">Cash Register</button>
     <button class="tab" id="tab-products" type="button">Add Products</button>
@@ -255,6 +262,8 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
         <input type="text" id="sShop" maxlength="40" autocomplete="off">
         <label for="sCur">Money symbol (like $, &pound; or &euro;)</label>
         <input type="text" id="sCur" maxlength="3" autocomplete="off" style="max-width:140px">
+        <label for="sFooter">Text at the bottom of the receipt</label>
+        <textarea class="field" id="sFooter" maxlength="120"></textarea>
         <div class="status error" id="settingsError"></div>
         <button class="btn" id="saveSettingsBtn" type="button">Save settings</button>
       </div>
@@ -263,10 +272,12 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       <div class="card">
         <h2>Backup</h2>
         <p class="small">Saves all your products and settings into one file, or loads them back from a file.</p>
-        <button class="btn" id="exportBtn" type="button">Save a backup</button>
-        <label class="btn grey file-btn" for="importFile" style="margin-bottom:8px">Load a backup
-          <input type="file" id="importFile" accept=".json,application/json">
-        </label>
+        <div class="btn-row">
+          <button class="btn" id="exportBtn" type="button">Save a backup</button>
+          <label class="btn grey file-btn" for="importFile">Load a backup
+            <input type="file" id="importFile" accept=".json,application/json">
+          </label>
+        </div>
         <div class="status" id="backupStatus"></div>
       </div>
       <div class="card">
@@ -310,8 +321,9 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   'use strict';
 
   var APP_NAME = 'kids-register';          // used in the backup file name
-  var APP_VERSION = '1.0';
+  var APP_VERSION = '1.3';      // filled in automatically by the build script
   var DATA_KEY = 'kidsRegister.data';      // where products + settings live in the browser
+  var DEFAULT_FOOTER = 'Thank you for shopping with us!\nCome back soon!';
   var LOG_KEY = 'kidsRegister.log';        // where the problem report lives in the browser
 
   /* ---------------------------------------------------------------------------
@@ -467,7 +479,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
      --------------------------------------------------------------------------- */
   var Store = {
     canSave: true,
-    data: { products: {}, settings: { shopName: 'My Little Shop', currency: '$' } },
+    data: { products: {}, settings: { shopName: 'My Little Shop', currency: '$', footer: DEFAULT_FOOTER } },
 
     load: function () {
       try {
@@ -522,10 +534,11 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       if (ok) { products[p.code] = { name: p.name, cents: p.priceCents }; good++; } else { skipped++; }
     });
     if (good === 0 && skipped > 0) { return { ok: false, error: 'None of the products in this file were readable.' }; }
-    var settings = { shopName: 'My Little Shop', currency: '$' };
+    var settings = { shopName: 'My Little Shop', currency: '$', footer: DEFAULT_FOOTER };
     if (obj.settings && typeof obj.settings === 'object') {
       if (typeof obj.settings.shopName === 'string' && obj.settings.shopName.length <= 40) { settings.shopName = obj.settings.shopName; }
       if (typeof obj.settings.currency === 'string' && obj.settings.currency.length <= 3 && obj.settings.currency.length > 0) { settings.currency = obj.settings.currency; }
+      if (typeof obj.settings.footer === 'string' && obj.settings.footer.length <= 120) { settings.footer = obj.settings.footer; }   // older backups have no footer: default is kept
     }
     return { ok: true, products: products, settings: settings, count: good, skipped: skipped };
   }
@@ -534,7 +547,9 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   function money(cents) {
     var sign = cents < 0 ? '-' : '';
     cents = Math.abs(cents);
-    return sign + Store.data.settings.currency + Math.floor(cents / 100) + '.' + pad(cents % 100);
+    var cur = Store.data.settings.currency;
+    if (/[A-Za-z]$/.test(cur)) { cur += ' '; }          // letter codes like CHF get a space: "CHF 1.50"; symbols like $ do not
+    return sign + cur + Math.floor(cents / 100) + '.' + pad(cents % 100);
   }
   // Accepts "1.5", "1,50", "$1.50". Returns cents, or -1 if it isn't a sensible price.
   function parsePrice(text) {
@@ -941,8 +956,10 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     r.appendChild(totalTable);
     r.appendChild(el('div', 'center', items + (items === 1 ? ' item' : ' items')));
     r.appendChild(el('div', 'line'));
-    r.appendChild(el('div', 'center', 'Thank you for shopping with us!'));
-    r.appendChild(el('div', 'center', 'Come back soon!'));
+    // The footer text from Settings; each typed line becomes its own centered line.
+    Store.data.settings.footer.split(/\r?\n/).forEach(function (line) {
+      if (line.replace(/\s/g, '') !== '') { r.appendChild(el('div', 'center', line)); }
+    });
 
     Log.add('INFO', 'Print receipt: ' + items + ' items, ' + cart.length + ' lines');
     try { window.print(); } catch (e) {
@@ -977,14 +994,18 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     beep(true);
     $('pCode').value = code;
     $('formError').textContent = '';
-    loadCodeIntoForm(code);
+    loadCodeIntoForm(code, true);
     if (Store.data.products[code]) { setStatus('productsStatus', 'Scanned ' + code + ' - already saved. You can change it below.', false); }
     else { setStatus('productsStatus', 'Scanned ' + code + ' - now type a name and price.', false); $('pName').focus(); }
   }
 
-  function loadCodeIntoForm(code) {
+  // Show the saved details for a barcode. For a barcode we don't know, the old name and price are
+  // wiped when they belonged to a different saved product (or when clearOld is true, e.g. after a scan).
+  function loadCodeIntoForm(code, clearOld) {
     var p = Store.data.products[code];
     var note = $('editNotice');
+    var showingSaved = note.className.indexOf('show') !== -1;
+    if (!p && (clearOld || showingSaved)) { $('pName').value = ''; $('pPrice').value = ''; }
     if (p) {
       $('pName').value = p.name;
       $('pPrice').value = (p.cents / 100).toFixed(2);
@@ -1064,7 +1085,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     if (shop === '') { $('settingsError').textContent = 'Please give your shop a name.'; return; }
     if (cur === '') { $('settingsError').textContent = 'Please type a money symbol, like $.'; return; }
     $('settingsError').textContent = '';
-    Store.data.settings = { shopName: shop, currency: cur };
+    Store.data.settings = { shopName: shop, currency: cur, footer: $('sFooter').value.replace(/^\s+|\s+$/g, '') };
     Store.save();
     Log.add('INFO', 'Settings saved');
     toast('Settings saved');
@@ -1075,7 +1096,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     try {
       var now = new Date();
       var backup = {
-        app: APP_NAME, version: 1, exportedAt: now.toISOString(),
+        app: APP_NAME, version: 1, appVersion: APP_VERSION, exportedAt: now.toISOString(),
         settings: Store.data.settings, products: productsToArray(Store.data.products)
       };
       var filename = APP_NAME + '-backup-' + stampForFile(now) + '.json';
@@ -1127,6 +1148,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   function fillSettings() {
     $('sShop').value = Store.data.settings.shopName;
     $('sCur').value = Store.data.settings.currency;
+    $('sFooter').value = Store.data.settings.footer;
   }
   function refreshLogBox() { $('logBox').value = Log.fullText(); $('logBox').scrollTop = $('logBox').scrollHeight; }
 
@@ -1149,6 +1171,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     Log.add('INFO', '--- App opened (version ' + APP_VERSION + ') ---');
     Store.load();
     $('storageWarning').style.display = Store.canSave ? 'none' : 'block';
+    $('verTag').textContent = 'v' + APP_VERSION;
 
     ['register', 'products', 'settings'].forEach(function (v) { $('tab-' + v).onclick = function () { showView(v); }; });
 
@@ -1170,6 +1193,10 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     // Add products screen
     $('productsCamBtn').onclick = function () { toggleCamera('products'); };
     $('saveBtn').onclick = saveProduct;
+    // Pressing Enter in any of the three boxes saves the product.
+    ['pCode', 'pName', 'pPrice'].forEach(function (id) {
+      $(id).onkeydown = function (ev) { if (ev.keyCode === 13) { ev.preventDefault(); saveProduct(); } };
+    });
     $('clearFormBtn').onclick = clearForm;
     $('prodSearch').oninput = renderProducts;
     // If a known number is typed into the barcode box, load its details.
