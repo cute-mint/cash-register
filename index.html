@@ -198,6 +198,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
         <div id="cartList"></div>
         <div class="total"><span>Total</span><span id="cartTotal">$0.00</span></div>
         <button class="btn orange" id="printBtn" type="button">&#128424; Print receipt</button>
+        <button class="btn" id="pdfBtn" type="button">Receipt as PDF</button>
         <button class="btn grey" id="newCustomerBtn" type="button">Next customer</button>
       </div>
     </div>
@@ -330,7 +331,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   'use strict';
 
   var APP_NAME = 'kids-register';          // used in the backup file name
-  var APP_VERSION = '1.5';      // filled in automatically by the build script
+  var APP_VERSION = '1.6';      // filled in automatically by the build script
   var DATA_KEY = 'kidsRegister.data';      // where products + settings live in the browser
   var DEFAULT_FOOTER = 'Thank you for shopping with us!\nCome back soon!';
   var LOG_KEY = 'kidsRegister.log';        // where the problem report lives in the browser
@@ -408,8 +409,8 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   }
 
   // Hand a text file to the browser as a download.
-  function downloadText(filename, text, mime) {
-    var blob = new Blob([text], { type: mime });
+  function downloadText(filename, text, mime) { downloadBlob(filename, new Blob([text], { type: mime })); }
+  function downloadBlob(filename, blob) {
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url; a.download = filename;
@@ -923,6 +924,143 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     });
     $('cartTotal').textContent = money(total);
     $('printBtn').disabled = cart.length === 0;
+    $('pdfBtn').disabled = cart.length === 0;
+  }
+
+  /* ---- Receipt as PDF ----
+     Safari's print command does not work in an app added to the Home Screen. So there the receipt is made as a
+     small PDF file instead and handed to the iPad's share sheet, which has "Print" and "Save to Files".
+     The PDF is written by hand here (plain text in the Courier font), so no extra library is needed. */
+  var PDF_COLS = 38;                       // characters per line on the 80 mm wide receipt
+
+  // True when the page was opened from the Home Screen icon (full-screen app mode).
+  function isStandalone() {
+    return window.navigator.standalone === true ||
+      !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  }
+
+  function spaces(n) { var s = ''; while (s.length < n) { s += ' '; } return s; }
+  function centerText(s) { return spaces(Math.max(0, Math.floor((PDF_COLS - s.length) / 2))) + s; }
+  // Break text into pieces no longer than width (at spaces where possible).
+  function wrapText(text, width) {
+    var out = [], line = '';
+    text.split(' ').forEach(function (word) {
+      while (word.length > width) {                 // a single very long word is cut
+        if (line !== '') { out.push(line); line = ''; }
+        out.push(word.substring(0, width)); word = word.substring(width);
+      }
+      if (line === '') { line = word; }
+      else if ((line + ' ' + word).length <= width) { line += ' ' + word; }
+      else { out.push(line); line = word; }
+    });
+    out.push(line);
+    return out;
+  }
+  // "left text ..... right text" lines (left part wraps when long; the price is on the first line).
+  function twoColumns(left, right) {
+    var parts = wrapText(left, PDF_COLS - right.length - 1);
+    parts[0] = parts[0] + spaces(PDF_COLS - parts[0].length - right.length) + right;
+    return parts;
+  }
+  // Turn a text into the byte-like characters a PDF's standard font understands (Latin letters, EUR sign).
+  function pdfText(s) {
+    var out = '';
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i), ch;
+      if (c === 0x20AC) { ch = '\x80'; }                      // euro sign
+      else if (c < 32 || c > 255) { ch = (c < 32) ? ' ' : '?'; }
+      else { ch = s.charAt(i); }
+      if (ch === '\\' || ch === '(' || ch === ')') { ch = '\\' + ch; }
+      out += ch;
+    }
+    return out;
+  }
+
+  // The receipt as lines of { text, bold }.
+  function receiptLines() {
+    var lines = [], items = 0, rule = '';
+    while (rule.length < PDF_COLS) { rule += '-'; }
+    function add(arr, bold) { arr.forEach(function (t) { lines.push({ text: t, bold: !!bold }); }); }
+    add(wrapText(Store.data.settings.shopName, PDF_COLS).map(centerText), true);
+    add([centerText(prettyDateTime(new Date())), rule]);
+    cart.forEach(function (line) {
+      var p = Store.data.products[line.code];
+      if (!p) { return; }
+      items += line.qty;
+      add(twoColumns(line.qty + ' x ' + p.name, money(p.cents * line.qty)));
+      if (line.qty > 1) { add(['    (' + money(p.cents) + ' each)']); }
+    });
+    add([rule]);
+    add(twoColumns('TOTAL', money(cartTotalCents())), true);
+    add([centerText(items + (items === 1 ? ' item' : ' items')), rule]);
+    Store.data.settings.footer.split(/\r?\n/).forEach(function (l) {
+      if (l.replace(/\s/g, '') !== '') { add(wrapText(l, PDF_COLS).map(centerText)); }
+    });
+    return lines;
+  }
+
+  // Build the PDF file and return it as a Uint8Array.
+  function makeReceiptPdf() {
+    var lines = receiptLines();
+    var W = 226, margin = 12, lead = 12;                      // page width 80 mm; sizes in points
+    var H = margin * 2 + lines.length * lead;
+    var content = '';
+    lines.forEach(function (l, i) {
+      var y = H - margin - 9 - i * lead;
+      content += 'BT /' + (l.bold ? 'F2' : 'F1') + ' 9 Tf 1 0 0 1 ' + margin + ' ' + y + ' Tm (' + pdfText(l.text) + ') Tj ET\n';
+    });
+    var objs = [
+      '<< /Type /Catalog /Pages 2 0 R >>',
+      '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>',
+      '<< /Length ' + content.length + ' >>\nstream\n' + content + 'endstream',
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>',
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold /Encoding /WinAnsiEncoding >>'
+    ];
+    var pdf = '%PDF-1.4\n', offsets = [];
+    objs.forEach(function (o, i) { offsets.push(pdf.length); pdf += (i + 1) + ' 0 obj\n' + o + '\nendobj\n'; });
+    var xref = pdf.length;
+    pdf += 'xref\n0 ' + (objs.length + 1) + '\n0000000000 65535 f \n';
+    offsets.forEach(function (o) { pdf += pad(o, 10) + ' 00000 n \n'; });
+    pdf += 'trailer\n<< /Size ' + (objs.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n';
+    var bytes = new Uint8Array(pdf.length);                   // every character is one byte
+    for (var i = 0; i < pdf.length; i++) { bytes[i] = pdf.charCodeAt(i) & 255; }
+    return bytes;
+  }
+
+  // Make the PDF and open the share sheet (Print / Save to Files / AirDrop...). Falls back to opening or downloading it.
+  function shareReceiptPdf() {
+    if (cart.length === 0) { toast('Scan something first!', true); return; }
+    var bytes, blob, filename = 'receipt-' + stampForFile(new Date()) + '.pdf';
+    try {
+      bytes = makeReceiptPdf();
+      blob = new Blob([bytes], { type: 'application/pdf' });
+    } catch (e) {
+      Log.add('ERROR', 'Could not make the PDF: ' + e.name + ' ' + e.message);
+      toast('The receipt could not be created.', true);
+      return;
+    }
+    Log.add('INFO', 'Receipt PDF created (' + bytes.length + ' bytes), standalone=' + isStandalone());
+    var file = null;
+    try { file = new File([blob], filename, { type: 'application/pdf' }); } catch (e1) { file = null; }
+    if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: 'Receipt' }).then(function () {
+        Log.add('INFO', 'Receipt shared');
+      }).catch(function (e) {
+        if (e && e.name === 'AbortError') { Log.add('INFO', 'Share sheet closed without choosing'); return; }   // user cancelled
+        Log.add('ERROR', 'Sharing failed: ' + (e && e.name) + ' ' + (e && e.message));
+        openOrDownloadPdf(blob, filename);
+      });
+    } else {
+      Log.add('WARN', 'Sharing files is not available here; opening the PDF instead');
+      openOrDownloadPdf(blob, filename);
+    }
+  }
+  function openOrDownloadPdf(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var win = null;
+    try { win = window.open(url, '_blank'); } catch (e) { win = null; }
+    if (!win) { downloadBlob(filename, blob); }       // pop-up blocked: download the file instead
   }
 
   function cartTotalCents() {
@@ -970,6 +1108,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       if (line.replace(/\s/g, '') !== '') { r.appendChild(el('div', 'center', line)); }
     });
 
+    if (isStandalone()) { shareReceiptPdf(); return; }   // printing does not work in a Home Screen app
     Log.add('INFO', 'Print receipt: ' + items + ' items, ' + cart.length + ' lines');
     try { window.print(); } catch (e) {
       Log.add('ERROR', 'Printing failed: ' + e.name);
@@ -1189,6 +1328,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     $('registerAddBtn').onclick = addTypedRegisterCode;
     $('registerCode').onkeydown = function (ev) { if (ev.keyCode === 13) { addTypedRegisterCode(); } };
     $('printBtn').onclick = printReceipt;
+    $('pdfBtn').onclick = shareReceiptPdf;
     $('newCustomerBtn').onclick = newCustomer;
     $('unknownAddBtn').onclick = function () {
       var code = lastUnknownCode;
