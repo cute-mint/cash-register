@@ -59,7 +59,7 @@ button { font-family: inherit; }
 .btn.grey { background: #64748b; }
 .btn.small-btn { font-size: 16px; min-height: 44px; padding: 8px 14px; }
 .btn[disabled] { opacity: .4; }
-input[type=text], input[type=search], input[type=tel], textarea.field {
+input[type=text], input[type=search], input[type=tel], textarea.field, select {
   font-family: inherit; font-size: 20px; padding: 10px 12px; border: 2px solid #cbd5e1; border-radius: 10px;
   width: 100%; min-height: 52px; background: #fff; color: #1e293b; -webkit-appearance: none; appearance: none;
 }
@@ -154,52 +154,51 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
 <body>
 
 <!-- ============================ SCREEN LAYOUT ============================ -->
+<!-- Texts are filled in from the TRANSLATIONS block below (data-i18n = text, data-i18n-html = text with bold words,
+     data-i18n-ph = placeholder inside an input box). -->
 <div class="topbar">
-  <div class="toprow"><h1>&#128722; Kids Cash Register</h1><span class="ver" id="verTag"></span></div>
+  <div class="toprow"><h1>&#128722; <span data-i18n="appTitle"></span></h1><span class="ver" id="verTag"></span></div>
   <div class="tabs">
-    <button class="tab active" id="tab-register" type="button">Cash Register</button>
-    <button class="tab" id="tab-products" type="button">Add Products</button>
-    <button class="tab" id="tab-settings" type="button">Settings &amp; Help</button>
+    <button class="tab active" id="tab-register" type="button" data-i18n="tabRegister"></button>
+    <button class="tab" id="tab-products" type="button" data-i18n="tabProducts"></button>
+    <button class="tab" id="tab-settings" type="button" data-i18n="tabSettings"></button>
   </div>
 </div>
 
-<div class="notice show" id="storageWarning" style="display:none; margin:14px;">
-  Your browser is not letting this app save things, so your products will be lost when you close the page.
-  Try turning off Private Browsing, or use "Save a backup" in Settings &amp; Help often.
-</div>
+<div class="notice show" id="storageWarning" style="display:none; margin:14px;" data-i18n="storageWarning"></div>
 
 <!-- ---------- Mode 2: Cash register ---------- -->
 <div class="view active" id="view-register">
   <div class="columns">
     <div class="col">
       <div class="card">
-        <h2>1. Scan an item</h2>
+        <h2 data-i18n="regScanTitle"></h2>
         <div class="camera" id="registerCam">
           <video id="registerVideo" autoplay muted playsinline webkit-playsinline></video>
-          <div class="off-note">Camera is off</div>
+          <div class="off-note" data-i18n="cameraOff"></div>
           <div class="aim"></div>
         </div>
-        <button class="btn" id="registerCamBtn" type="button">Start camera</button>
+        <button class="btn" id="registerCamBtn" type="button"></button>
         <div class="status" id="registerStatus"></div>
         <div class="notice" id="unknownNotice">
           <p id="unknownText"></p>
-          <button class="btn orange small-btn" id="unknownAddBtn" type="button">Add this product now</button>
+          <button class="btn orange small-btn" id="unknownAddBtn" type="button" data-i18n="addThisProduct"></button>
         </div>
-        <label for="registerCode">No camera? Type the number under the barcode:</label>
+        <label for="registerCode" data-i18n="typeNumberLabel"></label>
         <div class="row">
-          <div class="grow"><input type="tel" id="registerCode" placeholder="e.g. 4006381333931" autocomplete="off"></div>
-          <button class="btn" id="registerAddBtn" type="button">Add</button>
+          <div class="grow"><input type="tel" id="registerCode" data-i18n-ph="barcodePlaceholder" autocomplete="off"></div>
+          <button class="btn" id="registerAddBtn" type="button" data-i18n="add"></button>
         </div>
       </div>
     </div>
     <div class="col">
       <div class="card">
-        <h2>2. Shopping list</h2>
+        <h2 data-i18n="cartTitle"></h2>
         <div id="cartList"></div>
-        <div class="total"><span>Total</span><span id="cartTotal">$0.00</span></div>
-        <button class="btn orange" id="printBtn" type="button">&#128424; Print receipt</button>
-        <button class="btn" id="pdfBtn" type="button">Receipt as PDF</button>
-        <button class="btn grey" id="newCustomerBtn" type="button">Next customer</button>
+        <div class="total"><span data-i18n="total"></span><span id="cartTotal">$0.00</span></div>
+        <button class="btn orange" id="printBtn" type="button">&#128424; <span data-i18n="printReceipt"></span></button>
+        <button class="btn" id="pdfBtn" type="button" data-i18n="receiptPdf"></button>
+        <button class="btn grey" id="newCustomerBtn" type="button" data-i18n="nextCustomer"></button>
       </div>
     </div>
   </div>
@@ -211,37 +210,37 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   <div class="columns">
     <div class="col">
       <div class="card">
-        <h2>1. Scan a barcode</h2>
+        <h2 data-i18n="prodScanTitle"></h2>
         <div class="camera" id="productsCam">
           <video id="productsVideo" autoplay muted playsinline webkit-playsinline></video>
-          <div class="off-note">Camera is off</div>
+          <div class="off-note" data-i18n="cameraOff"></div>
           <div class="aim"></div>
         </div>
-        <button class="btn" id="productsCamBtn" type="button">Start camera</button>
+        <button class="btn" id="productsCamBtn" type="button"></button>
         <div class="status" id="productsStatus"></div>
       </div>
     </div>
     <div class="col">
       <div class="card">
-        <h2>2. Name and price</h2>
+        <h2 data-i18n="formTitle"></h2>
         <div class="notice info" id="editNotice"></div>
-        <label for="pCode">Barcode number (scanned for you, or type it)</label>
-        <input type="tel" id="pCode" placeholder="e.g. 4006381333931" autocomplete="off">
-        <label for="pName">Product name</label>
-        <input type="text" id="pName" maxlength="60" placeholder="e.g. Apple juice" autocomplete="off">
-        <label for="pPrice">Price</label>
-        <input type="text" id="pPrice" inputmode="decimal" placeholder="e.g. 1.50" autocomplete="off">
+        <label for="pCode" data-i18n="labelBarcode"></label>
+        <input type="tel" id="pCode" data-i18n-ph="barcodePlaceholder" autocomplete="off">
+        <label for="pName" data-i18n="labelName"></label>
+        <input type="text" id="pName" maxlength="60" data-i18n-ph="placeholderName" autocomplete="off">
+        <label for="pPrice" data-i18n="labelPrice"></label>
+        <input type="text" id="pPrice" inputmode="decimal" data-i18n-ph="placeholderPrice" autocomplete="off">
         <div class="status error" id="formError"></div>
-        <button class="btn" id="saveBtn" type="button">Save product</button>
-        <button class="btn grey" id="clearFormBtn" type="button">Clear</button>
+        <button class="btn" id="saveBtn" type="button" data-i18n="saveProduct"></button>
+        <button class="btn grey" id="clearFormBtn" type="button" data-i18n="clear"></button>
       </div>
     </div>
   </div>
-    <div class="card">
-      <h2>Saved products (<span id="prodCount">0</span>)</h2>
-      <input type="search" id="prodSearch" placeholder="Search by name or number" autocomplete="off">
-      <div id="prodList"></div>
-    </div>
+  <div class="card">
+    <h2><span data-i18n="savedProducts"></span> (<span id="prodCount">0</span>)</h2>
+    <input type="search" id="prodSearch" data-i18n-ph="searchPlaceholder" autocomplete="off">
+    <div id="prodList"></div>
+  </div>
 </div>
 
 <!-- ---------- Settings, backup, help, log ---------- -->
@@ -249,56 +248,58 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   <div class="columns">
     <div class="col">
       <div class="card">
-        <h2>How to use</h2>
-        <h3>Step 1: Teach the shop its products</h3>
+        <h2 data-i18n="helpTitle"></h2>
+        <h3 data-i18n="helpStep1Title"></h3>
         <ol class="steps">
-          <li>Tap <b>Add Products</b>, then <b>Start camera</b> and tap <b>Allow</b> if asked.</li>
-          <li>Hold a product's barcode in front of the camera until you hear a beep.</li>
-          <li>Type the product's name and price, then tap <b>Save product</b>.</li>
+          <li data-i18n-html="helpStep1a"></li>
+          <li data-i18n-html="helpStep1b"></li>
+          <li data-i18n-html="helpStep1c"></li>
         </ol>
-        <h3>Step 2: Play shop</h3>
+        <h3 data-i18n="helpStep2Title"></h3>
         <ol class="steps">
-          <li>Tap <b>Cash Register</b> and <b>Start camera</b>.</li>
-          <li>Scan the products. They appear in the shopping list with the total.</li>
-          <li>Tap <b>Print receipt</b> to print it, then <b>Next customer</b> to start again.</li>
+          <li data-i18n-html="helpStep2a"></li>
+          <li data-i18n-html="helpStep2b"></li>
+          <li data-i18n-html="helpStep2c"></li>
         </ol>
-        <p class="small">Tips: good light and holding the barcode about 20 cm (8 inches) away works best. If a barcode
-          won't scan, type the number printed under it. Your products are saved on this iPad in this browser.
-          Save a backup now and then in case the browser's data is cleared.</p>
+        <p class="small" data-i18n="helpTips"></p>
       </div>
       <div class="card">
-        <h2>Shop settings</h2>
-        <label for="sShop">Shop name (shown on the receipt)</label>
+        <h2 data-i18n="languageTitle"></h2>
+        <label for="sLang" data-i18n="labelLanguage"></label>
+        <select id="sLang"></select>
+      </div>
+      <div class="card">
+        <h2 data-i18n="shopSettings"></h2>
+        <label for="sShop" data-i18n="labelShop"></label>
         <input type="text" id="sShop" maxlength="40" autocomplete="off">
-        <label for="sCur">Money symbol (like $, &pound; or &euro;)</label>
+        <label for="sCur" data-i18n="labelCurrency"></label>
         <input type="text" id="sCur" maxlength="3" autocomplete="off" style="max-width:140px">
-        <label for="sFooter">Text at the bottom of the receipt</label>
+        <label for="sFooter" data-i18n="labelFooter"></label>
         <textarea class="field" id="sFooter" maxlength="120"></textarea>
         <div class="status error" id="settingsError"></div>
-        <button class="btn" id="saveSettingsBtn" type="button">Save settings</button>
+        <button class="btn" id="saveSettingsBtn" type="button" data-i18n="saveSettings"></button>
       </div>
     </div>
     <div class="col">
       <div class="card">
-        <h2>Backup</h2>
-        <p class="small">Saves all your products and settings into one file, or loads them back from a file.</p>
+        <h2 data-i18n="backupTitle"></h2>
+        <p class="small" data-i18n="backupText"></p>
         <div class="btn-row">
-          <button class="btn" id="exportBtn" type="button">Save a backup</button>
-          <label class="btn grey file-btn" for="importFile">Load a backup
+          <button class="btn" id="exportBtn" type="button" data-i18n="saveBackup"></button>
+          <label class="btn grey file-btn" for="importFile"><span data-i18n="loadBackup"></span>
             <input type="file" id="importFile" accept=".json,application/json">
           </label>
         </div>
         <div class="status" id="backupStatus"></div>
       </div>
       <div class="card">
-        <h2>Problem report</h2>
-        <p class="small">If something goes wrong, copy this report and send it to whoever is helping you. It never contains
-          product names or prices.</p>
+        <h2 data-i18n="reportTitle"></h2>
+        <p class="small" data-i18n="reportText"></p>
         <textarea class="log" id="logBox" readonly></textarea>
         <div style="margin-top:8px">
-          <button class="btn small-btn" id="copyLogBtn" type="button">Copy report</button>
-          <button class="btn small-btn grey" id="downloadLogBtn" type="button">Download report</button>
-          <button class="btn small-btn grey" id="clearLogBtn" type="button">Clear report</button>
+          <button class="btn small-btn" id="copyLogBtn" type="button" data-i18n="copyReport"></button>
+          <button class="btn small-btn grey" id="downloadLogBtn" type="button" data-i18n="downloadReport"></button>
+          <button class="btn small-btn grey" id="clearLogBtn" type="button" data-i18n="clearReport"></button>
         </div>
         <div class="status" id="logStatus"></div>
       </div>
@@ -322,6 +323,580 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
 
 <script>
 /* =====================================================================================
+   TRANSLATIONS  -  all texts that appear in the app
+   -------------------------------------------------------------------------------------
+   HOW TO CHANGE A TEXT
+   * Find the language block below (en = English, de = Deutsch, it = Italiano, fr = Francais).
+   * Change the text between the quotes on the right side of the colon. Do not touch the word on the left
+     (the "key") - the app finds each text by that key.
+   * {name}, {count}, {code} ... are placeholders. The app fills them in. Keep them as they are, you may
+     move them within the sentence.
+   * Texts that contain <b>...</b> show bold words. \n means "start a new line".
+   * Inside a text, write a ' (apostrophe) as \'  and keep each text on ONE line, ending with a comma.
+   * If a key is missing in a language, the English text is shown instead.
+   * Use only letters found in Western European languages (a-z, accents, umlauts, EUR sign) - the PDF receipt
+     cannot show other characters.
+   HOW TO ADD A LANGUAGE: copy a whole block, give it a new short code (like es), translate the texts, and add the
+   language's name to the list "languageNames" at the very bottom.
+   ===================================================================================== */
+var TEXT = {
+
+  /* ----------------------------------- ENGLISH ----------------------------------- */
+  en: {
+    appTitle: 'Kids Cash Register',
+    tabRegister: 'Cash Register',
+    tabProducts: 'Add Products',
+    tabSettings: 'Settings & Help',
+    storageWarning: 'Your browser is not letting this app save things, so your products will be lost when you close the page. Try turning off Private Browsing, or use "Save a backup" in Settings & Help often.',
+
+    regScanTitle: '1. Scan an item',
+    cameraOff: 'Camera is off',
+    startCamera: 'Start camera',
+    stopCamera: 'Stop camera',
+    addThisProduct: 'Add this product now',
+    typeNumberLabel: 'No camera? Type the number under the barcode:',
+    barcodePlaceholder: 'e.g. 4006381333931',
+    add: 'Add',
+    cartTitle: '2. Shopping list',
+    total: 'Total',
+    printReceipt: 'Print receipt',
+    receiptPdf: 'Receipt as PDF',
+    nextCustomer: 'Next customer',
+
+    prodScanTitle: '1. Scan a barcode',
+    formTitle: '2. Name and price',
+    labelBarcode: 'Barcode number (scanned for you, or type it)',
+    labelName: 'Product name',
+    placeholderName: 'e.g. Apple juice',
+    labelPrice: 'Price',
+    placeholderPrice: 'e.g. 1.50',
+    saveProduct: 'Save product',
+    clear: 'Clear',
+    savedProducts: 'Saved products',
+    searchPlaceholder: 'Search by name or number',
+
+    helpTitle: 'How to use',
+    helpStep1Title: 'Step 1: Teach the shop its products',
+    helpStep1a: 'Tap <b>Add Products</b>, then <b>Start camera</b> and tap <b>Allow</b> if asked.',
+    helpStep1b: 'Hold a product\'s barcode in front of the camera until you hear a beep.',
+    helpStep1c: 'Type the product\'s name and price, then tap <b>Save product</b>.',
+    helpStep2Title: 'Step 2: Play shop',
+    helpStep2a: 'Tap <b>Cash Register</b> and <b>Start camera</b>.',
+    helpStep2b: 'Scan the products. They appear in the shopping list with the total.',
+    helpStep2c: 'Tap <b>Print receipt</b> to print it, then <b>Next customer</b> to start again.',
+    helpTips: 'Tips: good light and holding the barcode about 20 cm (8 inches) away works best. If a barcode won\'t scan, type the number printed under it. Your products are saved on this device in this browser. Save a backup now and then in case the browser\'s data is cleared.',
+
+    languageTitle: 'Language',
+    labelLanguage: 'Language of the app',
+    shopSettings: 'Shop settings',
+    labelShop: 'Shop name (shown on the receipt)',
+    labelCurrency: 'Money symbol (like $, £, € or CHF)',
+    labelFooter: 'Text at the bottom of the receipt',
+    saveSettings: 'Save settings',
+    settingsSaved: 'Settings saved',
+    needShop: 'Please give your shop a name.',
+    needCurrency: 'Please type a money symbol, like $.',
+
+    backupTitle: 'Backup',
+    backupText: 'Saves all your products and settings into one file, or loads them back from a file.',
+    saveBackup: 'Save a backup',
+    loadBackup: 'Load a backup',
+    backupDone: 'Backup created: {file}. Look in your Downloads (on iPad: Files app > Downloads).',
+    backupFail: 'Sorry, the backup could not be created on this device.',
+    fileTooBig: 'That file is too big to be a backup from this app.',
+    fileReadFail: 'The file could not be read. Please try again.',
+    notJson: 'That file is not a backup file (it could not be understood).',
+    errNotBackup: 'The file is not a backup from this app.',
+    errWrongApp: 'This file does not look like a Kids Cash Register backup.',
+    errNoList: 'The backup has no product list.',
+    errNoneReadable: 'None of the products in this file were readable.',
+    confirmLoad: 'Load this backup? It has {count} products and will REPLACE everything currently saved here.',
+    skippedNote: ' ({n} damaged entries will be skipped.)',
+    nothingChanged: 'Nothing was changed.',
+    loadedDone: 'Done! Loaded {count} products.',
+    loadedSkipped: 'Done! Loaded {count} products ({n} skipped).',
+    saveFailed: 'Could not save. Please save a backup!',
+
+    reportTitle: 'Problem report',
+    reportText: 'If something goes wrong, copy this report and send it to whoever is helping you. It never contains product names or prices.',
+    copyReport: 'Copy report',
+    downloadReport: 'Download report',
+    clearReport: 'Clear report',
+    copied: 'Copied! Now paste it into a message.',
+    copyFailed: 'Copy did not work. Press and hold in the box above, choose Select All, then Copy.',
+    downloaded: 'Report downloaded.',
+    cleared: 'Report cleared.',
+
+    codeEmpty: 'Please type the barcode number first.',
+    codeDigits: 'A barcode number only has digits (0-9). Please check what you typed.',
+    codeLength: 'Barcode numbers have 8, 12 or 13 digits. You typed {n}.',
+    codeCheck: 'Those numbers do not make a real barcode. Please check for a typing mistake.',
+
+    zxingMissing: 'The barcode reader did not load. Please reload the page.',
+    needHttps: 'The camera only works on a secure page (a web address starting with https://). You can still type barcode numbers.',
+    noCameraApi: 'This browser cannot use the camera. Try Safari or Chrome. You can still type barcode numbers.',
+    startingCamera: 'Starting the camera... tap Allow if asked.',
+    cameraBlocked: 'The camera is blocked. Allow camera access for this page (iPad: Settings > Safari > Camera; computer: click the camera icon in the address bar), then reload the page.',
+    noCameraFound: 'No camera was found on this device. You can still type barcode numbers.',
+    cameraBusy: 'The camera is being used by another app. Close that app and try again.',
+    cameraFailed: 'The camera could not be started. Please try again.',
+    noPicture: 'The camera started but shows no picture. Close other apps or tabs that use the camera, then try again.',
+    cameraOn: 'Camera is on. Hold a barcode in front of it.',
+
+    unknownItem: 'Oops! This item is not in the shop yet (barcode {code}).',
+    added: 'Added: {name}',
+    cartEmpty: 'Nothing here yet. Scan an item to begin!',
+    oneLess: 'One less',
+    oneMore: 'One more',
+    remove: 'Remove',
+    each: '{price} each',
+    scanFirst: 'Scan something first!',
+    pdfFailed: 'The receipt could not be created.',
+    printFailed: 'Printing did not work on this device.',
+    receiptTotal: 'TOTAL',
+    itemOne: '{n} item',
+    itemMany: '{n} items',
+    confirmNext: 'Clear the shopping list and start with the next customer?',
+    firstRun: 'No products yet - tap "{tab}" above to create some first.',
+
+    scannedKnown: 'Scanned {code} - already saved. You can change it below.',
+    scannedNew: 'Scanned {code} - now type a name and price.',
+    alreadySaved: 'This product is already saved. Saving will update it.',
+    needName: 'Please type a name for the product.',
+    needPrice: 'Please type a price using numbers, like 1.50.',
+    updated: 'Updated: {name}',
+    saved: 'Saved: {name}',
+    savedNext: 'Saved! Scan the next product.',
+    noProducts: 'No products yet. Scan a barcode to add your first one!',
+    noMatch: 'Nothing matches your search.',
+    edit: 'Edit',
+    del: 'Delete',
+    confirmDelete: 'Delete "{name}" from the shop?',
+    typeNamePrice: 'Type a name and price for barcode {code}.',
+
+    defaultShop: 'My Little Shop',
+    defaultFooter: 'Thank you for shopping with us!\nCome back soon!'
+  },
+
+  /* ----------------------------------- DEUTSCH ----------------------------------- */
+  de: {
+    appTitle: 'Kinder-Kasse',
+    tabRegister: 'Kasse',
+    tabProducts: 'Produkte erfassen',
+    tabSettings: 'Einstellungen & Hilfe',
+    storageWarning: 'Dein Browser erlaubt dieser App nicht zu speichern. Deine Produkte gehen verloren, wenn du die Seite schliesst. Schalte den privaten Modus aus oder nutze oft "Sicherung speichern" unter Einstellungen & Hilfe.',
+
+    regScanTitle: '1. Artikel scannen',
+    cameraOff: 'Kamera ist aus',
+    startCamera: 'Kamera starten',
+    stopCamera: 'Kamera stoppen',
+    addThisProduct: 'Dieses Produkt jetzt hinzufügen',
+    typeNumberLabel: 'Keine Kamera? Tippe die Zahl unter dem Strichcode ein:',
+    barcodePlaceholder: 'z. B. 4006381333931',
+    add: 'Hinzufügen',
+    cartTitle: '2. Einkaufsliste',
+    total: 'Summe',
+    printReceipt: 'Beleg drucken',
+    receiptPdf: 'Beleg als PDF',
+    nextCustomer: 'Nächster Kunde',
+
+    prodScanTitle: '1. Strichcode scannen',
+    formTitle: '2. Name und Preis',
+    labelBarcode: 'Strichcode-Nummer (wird gescannt oder tippe sie ein)',
+    labelName: 'Produktname',
+    placeholderName: 'z. B. Apfelsaft',
+    labelPrice: 'Preis',
+    placeholderPrice: 'z. B. 1.50',
+    saveProduct: 'Produkt speichern',
+    clear: 'Leeren',
+    savedProducts: 'Gespeicherte Produkte',
+    searchPlaceholder: 'Nach Name oder Nummer suchen',
+
+    helpTitle: 'So geht es',
+    helpStep1Title: 'Schritt 1: Dem Laden die Produkte beibringen',
+    helpStep1a: 'Tippe auf <b>Produkte erfassen</b>, dann auf <b>Kamera starten</b> und bei der Frage auf <b>Erlauben</b>.',
+    helpStep1b: 'Halte den Strichcode eines Produkts vor die Kamera, bis es piepst.',
+    helpStep1c: 'Tippe Namen und Preis des Produkts ein und tippe auf <b>Produkt speichern</b>.',
+    helpStep2Title: 'Schritt 2: Laden spielen',
+    helpStep2a: 'Tippe auf <b>Kasse</b> und auf <b>Kamera starten</b>.',
+    helpStep2b: 'Scanne die Produkte. Sie erscheinen mit der Summe in der Einkaufsliste.',
+    helpStep2c: 'Tippe auf <b>Beleg drucken</b>, um ihn zu drucken, und dann auf <b>Nächster Kunde</b>, um neu zu beginnen.',
+    helpTips: 'Tipps: Gutes Licht und etwa 20 cm Abstand zum Strichcode funktionieren am besten. Wenn ein Strichcode nicht gelesen wird, tippe die Zahl darunter ein. Deine Produkte werden auf diesem Gerät in diesem Browser gespeichert. Speichere ab und zu eine Sicherung, falls die Browserdaten gelöscht werden.',
+
+    languageTitle: 'Sprache',
+    labelLanguage: 'Sprache der App',
+    shopSettings: 'Laden-Einstellungen',
+    labelShop: 'Name des Ladens (steht auf dem Beleg)',
+    labelCurrency: 'Währungszeichen (z. B. $, £, € oder CHF)',
+    labelFooter: 'Text am Ende des Belegs',
+    saveSettings: 'Einstellungen speichern',
+    settingsSaved: 'Einstellungen gespeichert',
+    needShop: 'Bitte gib deinem Laden einen Namen.',
+    needCurrency: 'Bitte gib ein Währungszeichen ein, z. B. $.',
+
+    backupTitle: 'Sicherung',
+    backupText: 'Speichert alle Produkte und Einstellungen in einer Datei oder lädt sie aus einer Datei wieder.',
+    saveBackup: 'Sicherung speichern',
+    loadBackup: 'Sicherung laden',
+    backupDone: 'Sicherung erstellt: {file}. Schau in deinen Downloads (auf dem iPad: Dateien-App > Downloads).',
+    backupFail: 'Leider konnte die Sicherung auf diesem Gerät nicht erstellt werden.',
+    fileTooBig: 'Diese Datei ist zu gross, um eine Sicherung dieser App zu sein.',
+    fileReadFail: 'Die Datei konnte nicht gelesen werden. Bitte versuche es nochmal.',
+    notJson: 'Diese Datei ist keine Sicherungsdatei (sie konnte nicht verstanden werden).',
+    errNotBackup: 'Die Datei ist keine Sicherung dieser App.',
+    errWrongApp: 'Diese Datei sieht nicht wie eine Sicherung der Kinder-Kasse aus.',
+    errNoList: 'Die Sicherung enthält keine Produktliste.',
+    errNoneReadable: 'Kein Produkt in dieser Datei war lesbar.',
+    confirmLoad: 'Diese Sicherung laden? Sie enthält {count} Produkte und ERSETZT alles, was hier gespeichert ist.',
+    skippedNote: ' ({n} beschädigte Einträge werden übersprungen.)',
+    nothingChanged: 'Es wurde nichts verändert.',
+    loadedDone: 'Fertig! {count} Produkte geladen.',
+    loadedSkipped: 'Fertig! {count} Produkte geladen ({n} übersprungen).',
+    saveFailed: 'Speichern nicht möglich. Bitte speichere eine Sicherung!',
+
+    reportTitle: 'Problembericht',
+    reportText: 'Wenn etwas schiefgeht, kopiere diesen Bericht und schicke ihn der Person, die dir hilft. Er enthält nie Produktnamen oder Preise.',
+    copyReport: 'Bericht kopieren',
+    downloadReport: 'Bericht herunterladen',
+    clearReport: 'Bericht löschen',
+    copied: 'Kopiert! Jetzt in eine Nachricht einfuegen.',
+    copyFailed: 'Kopieren hat nicht geklappt. Halte im Feld oben gedrückt, wähle "Alles auswählen" und dann "Kopieren".',
+    downloaded: 'Bericht heruntergeladen.',
+    cleared: 'Bericht gelöscht.',
+
+    codeEmpty: 'Bitte tippe zuerst die Strichcode-Nummer ein.',
+    codeDigits: 'Eine Strichcode-Nummer besteht nur aus Ziffern (0-9). Bitte prüfe deine Eingabe.',
+    codeLength: 'Strichcode-Nummern haben 8, 12 oder 13 Ziffern. Du hast {n} eingetippt.',
+    codeCheck: 'Diese Zahlen ergeben keinen echten Strichcode. Bitte prüfe, ob du dich vertippt hast.',
+
+    zxingMissing: 'Der Strichcode-Leser wurde nicht geladen. Bitte lade die Seite neu.',
+    needHttps: 'Die Kamera funktioniert nur auf einer sicheren Seite (Webadresse beginnt mit https://). Du kannst die Nummern trotzdem eintippen.',
+    noCameraApi: 'Dieser Browser kann die Kamera nicht nutzen. Probiere Safari oder Chrome. Du kannst die Nummern trotzdem eintippen.',
+    startingCamera: 'Kamera wird gestartet... tippe auf Erlauben, wenn du gefragt wirst.',
+    cameraBlocked: 'Die Kamera ist gesperrt. Erlaube den Kamerazugriff für diese Seite (iPad: Einstellungen > Safari > Kamera; Computer: Kamera-Symbol in der Adressleiste anklicken) und lade die Seite neu.',
+    noCameraFound: 'Auf diesem Gerät wurde keine Kamera gefunden. Du kannst die Nummern trotzdem eintippen.',
+    cameraBusy: 'Die Kamera wird von einer anderen App benutzt. Schliesse diese App und versuche es nochmal.',
+    cameraFailed: 'Die Kamera konnte nicht gestartet werden. Bitte versuche es nochmal.',
+    noPicture: 'Die Kamera wurde gestartet, zeigt aber kein Bild. Schliesse andere Apps oder Tabs, die die Kamera benutzen, und versuche es nochmal.',
+    cameraOn: 'Kamera ist an. Halte einen Strichcode davor.',
+
+    unknownItem: 'Hoppla! Dieser Artikel ist noch nicht im Laden (Strichcode {code}).',
+    added: 'Hinzugefügt: {name}',
+    cartEmpty: 'Noch nichts da. Scanne einen Artikel, um zu beginnen!',
+    oneLess: 'Einer weniger',
+    oneMore: 'Einer mehr',
+    remove: 'Entfernen',
+    each: '{price} pro Stück',
+    scanFirst: 'Scanne zuerst etwas!',
+    pdfFailed: 'Der Beleg konnte nicht erstellt werden.',
+    printFailed: 'Drucken hat auf diesem Gerät nicht funktioniert.',
+    receiptTotal: 'SUMME',
+    itemOne: '{n} Artikel',
+    itemMany: '{n} Artikel',
+    confirmNext: 'Einkaufsliste leeren und mit dem nächsten Kunden beginnen?',
+    firstRun: 'Noch keine Produkte - tippe oben auf "{tab}", um welche anzulegen.',
+
+    scannedKnown: '{code} gescannt - schon gespeichert. Du kannst es unten ändern.',
+    scannedNew: '{code} gescannt - tippe jetzt Namen und Preis ein.',
+    alreadySaved: 'Dieses Produkt ist schon gespeichert. Speichern aktualisiert es.',
+    needName: 'Bitte tippe einen Namen für das Produkt ein.',
+    needPrice: 'Bitte tippe einen Preis mit Zahlen ein, z. B. 1.50.',
+    updated: 'Aktualisiert: {name}',
+    saved: 'Gespeichert: {name}',
+    savedNext: 'Gespeichert! Scanne das nächste Produkt.',
+    noProducts: 'Noch keine Produkte. Scanne einen Strichcode, um dein erstes anzulegen!',
+    noMatch: 'Nichts passt zu deiner Suche.',
+    edit: 'Ändern',
+    del: 'Löschen',
+    confirmDelete: '"{name}" aus dem Laden löschen?',
+    typeNamePrice: 'Tippe Namen und Preis für den Strichcode {code} ein.',
+
+    defaultShop: 'Mein kleiner Laden',
+    defaultFooter: 'Danke für deinen Einkauf!\nBis bald!'
+  },
+
+  /* ----------------------------------- ITALIANO ----------------------------------- */
+  it: {
+    appTitle: 'Cassa per bambini',
+    tabRegister: 'Cassa',
+    tabProducts: 'Aggiungi prodotti',
+    tabSettings: 'Impostazioni e aiuto',
+    storageWarning: 'Il tuo browser non permette all\'app di salvare i dati: i prodotti andranno persi quando chiudi la pagina. Disattiva la navigazione privata oppure usa spesso "Salva un backup" in Impostazioni e aiuto.',
+
+    regScanTitle: '1. Scansiona un articolo',
+    cameraOff: 'La fotocamera è spenta',
+    startCamera: 'Avvia fotocamera',
+    stopCamera: 'Ferma fotocamera',
+    addThisProduct: 'Aggiungi subito questo prodotto',
+    typeNumberLabel: 'Niente fotocamera? Scrivi il numero sotto il codice a barre:',
+    barcodePlaceholder: 'es. 4006381333931',
+    add: 'Aggiungi',
+    cartTitle: '2. Lista della spesa',
+    total: 'Totale',
+    printReceipt: 'Stampa scontrino',
+    receiptPdf: 'Scontrino in PDF',
+    nextCustomer: 'Prossimo cliente',
+
+    prodScanTitle: '1. Scansiona un codice a barre',
+    formTitle: '2. Nome e prezzo',
+    labelBarcode: 'Numero del codice a barre (scansionato o scrivilo)',
+    labelName: 'Nome del prodotto',
+    placeholderName: 'es. Succo di mela',
+    labelPrice: 'Prezzo',
+    placeholderPrice: 'es. 1.50',
+    saveProduct: 'Salva prodotto',
+    clear: 'Svuota',
+    savedProducts: 'Prodotti salvati',
+    searchPlaceholder: 'Cerca per nome o numero',
+
+    helpTitle: 'Come si usa',
+    helpStep1Title: 'Passo 1: Insegna i prodotti al negozio',
+    helpStep1a: 'Tocca <b>Aggiungi prodotti</b>, poi <b>Avvia fotocamera</b> e tocca <b>Consenti</b> se richiesto.',
+    helpStep1b: 'Tieni il codice a barre del prodotto davanti alla fotocamera finché senti un bip.',
+    helpStep1c: 'Scrivi nome e prezzo del prodotto, poi tocca <b>Salva prodotto</b>.',
+    helpStep2Title: 'Passo 2: Gioca al negozio',
+    helpStep2a: 'Tocca <b>Cassa</b> e <b>Avvia fotocamera</b>.',
+    helpStep2b: 'Scansiona i prodotti. Appaiono nella lista della spesa con il totale.',
+    helpStep2c: 'Tocca <b>Stampa scontrino</b> per stamparlo, poi <b>Prossimo cliente</b> per ricominciare.',
+    helpTips: 'Consigli: con buona luce e il codice a barre a circa 20 cm di distanza funziona meglio. Se un codice non viene letto, scrivi il numero stampato sotto. I prodotti sono salvati su questo dispositivo, in questo browser. Salva ogni tanto un backup, nel caso i dati del browser vengano cancellati.',
+
+    languageTitle: 'Lingua',
+    labelLanguage: 'Lingua dell\'app',
+    shopSettings: 'Impostazioni del negozio',
+    labelShop: 'Nome del negozio (appare sullo scontrino)',
+    labelCurrency: 'Simbolo della valuta (come $, £, € o CHF)',
+    labelFooter: 'Testo in fondo allo scontrino',
+    saveSettings: 'Salva impostazioni',
+    settingsSaved: 'Impostazioni salvate',
+    needShop: 'Dai un nome al tuo negozio.',
+    needCurrency: 'Scrivi un simbolo di valuta, come $.',
+
+    backupTitle: 'Backup',
+    backupText: 'Salva tutti i prodotti e le impostazioni in un file, oppure li ricarica da un file.',
+    saveBackup: 'Salva un backup',
+    loadBackup: 'Carica un backup',
+    backupDone: 'Backup creato: {file}. Guarda in Download (su iPad: app File > Download).',
+    backupFail: 'Spiacenti, non è stato possibile creare il backup su questo dispositivo.',
+    fileTooBig: 'Il file è troppo grande per essere un backup di questa app.',
+    fileReadFail: 'Impossibile leggere il file. Riprova.',
+    notJson: 'Il file non è un file di backup (non è stato possibile capirlo).',
+    errNotBackup: 'Il file non è un backup di questa app.',
+    errWrongApp: 'Questo file non sembra un backup di Cassa per bambini.',
+    errNoList: 'Il backup non contiene un elenco di prodotti.',
+    errNoneReadable: 'Nessun prodotto di questo file era leggibile.',
+    confirmLoad: 'Caricare questo backup? Contiene {count} prodotti e SOSTITUISCE tutto ciò che è salvato qui.',
+    skippedNote: ' ({n} voci danneggiate verranno saltate.)',
+    nothingChanged: 'Non è stato cambiato nulla.',
+    loadedDone: 'Fatto! Caricati {count} prodotti.',
+    loadedSkipped: 'Fatto! Caricati {count} prodotti ({n} saltati).',
+    saveFailed: 'Impossibile salvare. Salva un backup!',
+
+    reportTitle: 'Rapporto problemi',
+    reportText: 'Se qualcosa va storto, copia questo rapporto e invialo a chi ti sta aiutando. Non contiene mai nomi o prezzi dei prodotti.',
+    copyReport: 'Copia rapporto',
+    downloadReport: 'Scarica rapporto',
+    clearReport: 'Cancella rapporto',
+    copied: 'Copiato! Ora incollalo in un messaggio.',
+    copyFailed: 'La copia non ha funzionato. Tieni premuto nel riquadro sopra, scegli Seleziona tutto, poi Copia.',
+    downloaded: 'Rapporto scaricato.',
+    cleared: 'Rapporto cancellato.',
+
+    codeEmpty: 'Scrivi prima il numero del codice a barre.',
+    codeDigits: 'Il numero di un codice a barre contiene solo cifre (0-9). Controlla cosa hai scritto.',
+    codeLength: 'I codici a barre hanno 8, 12 o 13 cifre. Ne hai scritte {n}.',
+    codeCheck: 'Questi numeri non formano un vero codice a barre. Controlla se hai sbagliato a scrivere.',
+
+    zxingMissing: 'Il lettore di codici a barre non si è caricato. Ricarica la pagina.',
+    needHttps: 'La fotocamera funziona solo su una pagina sicura (indirizzo che inizia con https://). Puoi comunque scrivere i numeri.',
+    noCameraApi: 'Questo browser non può usare la fotocamera. Prova Safari o Chrome. Puoi comunque scrivere i numeri.',
+    startingCamera: 'Avvio della fotocamera... tocca Consenti se richiesto.',
+    cameraBlocked: 'La fotocamera è bloccata. Consenti l\'accesso alla fotocamera per questa pagina (iPad: Impostazioni > Safari > Fotocamera; computer: clicca l\'icona della fotocamera nella barra degli indirizzi), poi ricarica la pagina.',
+    noCameraFound: 'Nessuna fotocamera trovata su questo dispositivo. Puoi comunque scrivere i numeri.',
+    cameraBusy: 'La fotocamera è usata da un\'altra app. Chiudi quell\'app e riprova.',
+    cameraFailed: 'Impossibile avviare la fotocamera. Riprova.',
+    noPicture: 'La fotocamera è partita ma non mostra nessuna immagine. Chiudi le altre app o schede che usano la fotocamera e riprova.',
+    cameraOn: 'La fotocamera è accesa. Tieni un codice a barre davanti.',
+
+    unknownItem: 'Ops! Questo articolo non è ancora nel negozio (codice {code}).',
+    added: 'Aggiunto: {name}',
+    cartEmpty: 'Ancora niente. Scansiona un articolo per iniziare!',
+    oneLess: 'Uno in meno',
+    oneMore: 'Uno in più',
+    remove: 'Rimuovi',
+    each: '{price} l\'uno',
+    scanFirst: 'Scansiona prima qualcosa!',
+    pdfFailed: 'Impossibile creare lo scontrino.',
+    printFailed: 'La stampa non ha funzionato su questo dispositivo.',
+    receiptTotal: 'TOTALE',
+    itemOne: '{n} articolo',
+    itemMany: '{n} articoli',
+    confirmNext: 'Svuotare la lista e iniziare con il prossimo cliente?',
+    firstRun: 'Ancora nessun prodotto - tocca "{tab}" qui sopra per crearne.',
+
+    scannedKnown: 'Scansionato {code} - già salvato. Puoi modificarlo qui sotto.',
+    scannedNew: 'Scansionato {code} - ora scrivi nome e prezzo.',
+    alreadySaved: 'Questo prodotto è già salvato. Salvando verrà aggiornato.',
+    needName: 'Scrivi un nome per il prodotto.',
+    needPrice: 'Scrivi un prezzo con dei numeri, come 1.50.',
+    updated: 'Aggiornato: {name}',
+    saved: 'Salvato: {name}',
+    savedNext: 'Salvato! Scansiona il prossimo prodotto.',
+    noProducts: 'Ancora nessun prodotto. Scansiona un codice a barre per aggiungere il primo!',
+    noMatch: 'Nessun risultato per la tua ricerca.',
+    edit: 'Modifica',
+    del: 'Elimina',
+    confirmDelete: 'Eliminare "{name}" dal negozio?',
+    typeNamePrice: 'Scrivi nome e prezzo per il codice {code}.',
+
+    defaultShop: 'Il mio piccolo negozio',
+    defaultFooter: 'Grazie per aver comprato da noi!\nA presto!'
+  },
+
+  /* ----------------------------------- FRANCAIS ----------------------------------- */
+  fr: {
+    appTitle: 'Caisse pour enfants',
+    tabRegister: 'Caisse',
+    tabProducts: 'Ajouter des produits',
+    tabSettings: 'Réglages et aide',
+    storageWarning: 'Ton navigateur ne permet pas à l\'appli d\'enregistrer : tes produits seront perdus à la fermeture de la page. Désactive la navigation privée ou utilise souvent "Enregistrer une sauvegarde" dans Réglages et aide.',
+
+    regScanTitle: '1. Scanner un article',
+    cameraOff: 'La caméra est éteinte',
+    startCamera: 'Démarrer la caméra',
+    stopCamera: 'Arrêter la caméra',
+    addThisProduct: 'Ajouter ce produit maintenant',
+    typeNumberLabel: 'Pas de caméra ? Tape le numéro sous le code-barres :',
+    barcodePlaceholder: 'p. ex. 4006381333931',
+    add: 'Ajouter',
+    cartTitle: '2. Liste de courses',
+    total: 'Total',
+    printReceipt: 'Imprimer le ticket',
+    receiptPdf: 'Ticket en PDF',
+    nextCustomer: 'Client suivant',
+
+    prodScanTitle: '1. Scanner un code-barres',
+    formTitle: '2. Nom et prix',
+    labelBarcode: 'Numéro du code-barres (scanné ou tape-le)',
+    labelName: 'Nom du produit',
+    placeholderName: 'p. ex. Jus de pomme',
+    labelPrice: 'Prix',
+    placeholderPrice: 'p. ex. 1.50',
+    saveProduct: 'Enregistrer le produit',
+    clear: 'Effacer',
+    savedProducts: 'Produits enregistrés',
+    searchPlaceholder: 'Chercher par nom ou numéro',
+
+    helpTitle: 'Mode d\'emploi',
+    helpStep1Title: 'Étape 1 : Apprendre les produits au magasin',
+    helpStep1a: 'Touche <b>Ajouter des produits</b>, puis <b>Démarrer la caméra</b> et touche <b>Autoriser</b> si on te le demande.',
+    helpStep1b: 'Place le code-barres d\'un produit devant la caméra jusqu\'à entendre un bip.',
+    helpStep1c: 'Tape le nom et le prix du produit, puis touche <b>Enregistrer le produit</b>.',
+    helpStep2Title: 'Étape 2 : Jouer au magasin',
+    helpStep2a: 'Touche <b>Caisse</b> et <b>Démarrer la caméra</b>.',
+    helpStep2b: 'Scanne les produits. Ils apparaissent dans la liste de courses avec le total.',
+    helpStep2c: 'Touche <b>Imprimer le ticket</b> pour l\'imprimer, puis <b>Client suivant</b> pour recommencer.',
+    helpTips: 'Conseils : une bonne lumière et un code-barres à environ 20 cm donnent les meilleurs résultats. Si un code-barres n\'est pas lu, tape le numéro imprimé dessous. Tes produits sont enregistrés sur cet appareil, dans ce navigateur. Fais de temps en temps une sauvegarde au cas où les données du navigateur seraient effacées.',
+
+    languageTitle: 'Langue',
+    labelLanguage: 'Langue de l\'appli',
+    shopSettings: 'Réglages du magasin',
+    labelShop: 'Nom du magasin (affiché sur le ticket)',
+    labelCurrency: 'Symbole monétaire (comme $, £, € ou CHF)',
+    labelFooter: 'Texte en bas du ticket',
+    saveSettings: 'Enregistrer les réglages',
+    settingsSaved: 'Réglages enregistrés',
+    needShop: 'Donne un nom à ton magasin.',
+    needCurrency: 'Tape un symbole monétaire, comme $.',
+
+    backupTitle: 'Sauvegarde',
+    backupText: 'Enregistre tous tes produits et réglages dans un fichier, ou les recharge depuis un fichier.',
+    saveBackup: 'Enregistrer une sauvegarde',
+    loadBackup: 'Charger une sauvegarde',
+    backupDone: 'Sauvegarde créée : {file}. Regarde dans tes Téléchargements (sur iPad : appli Fichiers > Téléchargements).',
+    backupFail: 'Désolé, la sauvegarde n\'a pas pu être créée sur cet appareil.',
+    fileTooBig: 'Ce fichier est trop gros pour être une sauvegarde de cette appli.',
+    fileReadFail: 'Le fichier n\'a pas pu être lu. Réessaie.',
+    notJson: 'Ce fichier n\'est pas un fichier de sauvegarde (il n\'a pas pu être compris).',
+    errNotBackup: 'Ce fichier n\'est pas une sauvegarde de cette appli.',
+    errWrongApp: 'Ce fichier ne ressemble pas à une sauvegarde de la Caisse pour enfants.',
+    errNoList: 'La sauvegarde ne contient pas de liste de produits.',
+    errNoneReadable: 'Aucun produit de ce fichier n\'était lisible.',
+    confirmLoad: 'Charger cette sauvegarde ? Elle contient {count} produits et REMPLACE tout ce qui est enregistré ici.',
+    skippedNote: ' ({n} entrées abîmées seront ignorées.)',
+    nothingChanged: 'Rien n\'a été modifié.',
+    loadedDone: 'Terminé ! {count} produits chargés.',
+    loadedSkipped: 'Terminé ! {count} produits chargés ({n} ignorés).',
+    saveFailed: 'Enregistrement impossible. Fais une sauvegarde !',
+
+    reportTitle: 'Rapport de problème',
+    reportText: 'En cas de souci, copie ce rapport et envoie-le à la personne qui t\'aide. Il ne contient jamais de noms ni de prix de produits.',
+    copyReport: 'Copier le rapport',
+    downloadReport: 'Télécharger le rapport',
+    clearReport: 'Effacer le rapport',
+    copied: 'Copié ! Colle-le maintenant dans un message.',
+    copyFailed: 'La copie n\'a pas marché. Appuie longuement dans la zone ci-dessus, choisis Tout sélectionner, puis Copier.',
+    downloaded: 'Rapport téléchargé.',
+    cleared: 'Rapport effacé.',
+
+    codeEmpty: 'Tape d\'abord le numéro du code-barres.',
+    codeDigits: 'Un numéro de code-barres ne contient que des chiffres (0-9). Vérifie ce que tu as tapé.',
+    codeLength: 'Les codes-barres ont 8, 12 ou 13 chiffres. Tu en as tapé {n}.',
+    codeCheck: 'Ces chiffres ne forment pas un vrai code-barres. Vérifie s\'il y a une faute de frappe.',
+
+    zxingMissing: 'Le lecteur de codes-barres ne s\'est pas chargé. Recharge la page.',
+    needHttps: 'La caméra ne fonctionne que sur une page sécurisée (adresse commençant par https://). Tu peux quand même taper les numéros.',
+    noCameraApi: 'Ce navigateur ne peut pas utiliser la caméra. Essaie Safari ou Chrome. Tu peux quand même taper les numéros.',
+    startingCamera: 'Démarrage de la caméra... touche Autoriser si on te le demande.',
+    cameraBlocked: 'La caméra est bloquée. Autorise l\'accès à la caméra pour cette page (iPad : Réglages > Safari > Caméra ; ordinateur : clique sur l\'icône de caméra dans la barre d\'adresse), puis recharge la page.',
+    noCameraFound: 'Aucune caméra n\'a été trouvée sur cet appareil. Tu peux quand même taper les numéros.',
+    cameraBusy: 'La caméra est utilisée par une autre appli. Ferme-la et réessaie.',
+    cameraFailed: 'La caméra n\'a pas pu démarrer. Réessaie.',
+    noPicture: 'La caméra a démarré mais n\'affiche aucune image. Ferme les autres applis ou onglets qui utilisent la caméra, puis réessaie.',
+    cameraOn: 'La caméra est allumée. Place un code-barres devant.',
+
+    unknownItem: 'Oups ! Cet article n\'est pas encore dans le magasin (code {code}).',
+    added: 'Ajouté : {name}',
+    cartEmpty: 'Rien pour l\'instant. Scanne un article pour commencer !',
+    oneLess: 'Un de moins',
+    oneMore: 'Un de plus',
+    remove: 'Retirer',
+    each: '{price} pièce',
+    scanFirst: 'Scanne d\'abord quelque chose !',
+    pdfFailed: 'Le ticket n\'a pas pu être créé.',
+    printFailed: 'L\'impression n\'a pas fonctionné sur cet appareil.',
+    receiptTotal: 'TOTAL',
+    itemOne: '{n} article',
+    itemMany: '{n} articles',
+    confirmNext: 'Vider la liste de courses et passer au client suivant ?',
+    firstRun: 'Pas encore de produits - touche "{tab}" ci-dessus pour en créer.',
+
+    scannedKnown: '{code} scanné - déjà enregistré. Tu peux le modifier ci-dessous.',
+    scannedNew: '{code} scanné - tape maintenant un nom et un prix.',
+    alreadySaved: 'Ce produit est déjà enregistré. Enregistrer le mettra à jour.',
+    needName: 'Tape un nom pour le produit.',
+    needPrice: 'Tape un prix avec des chiffres, comme 1.50.',
+    updated: 'Mis à jour : {name}',
+    saved: 'Enregistré : {name}',
+    savedNext: 'Enregistré ! Scanne le produit suivant.',
+    noProducts: 'Pas encore de produits. Scanne un code-barres pour ajouter le premier !',
+    noMatch: 'Rien ne correspond à ta recherche.',
+    edit: 'Modifier',
+    del: 'Supprimer',
+    confirmDelete: 'Supprimer "{name}" du magasin ?',
+    typeNamePrice: 'Tape un nom et un prix pour le code-barres {code}.',
+
+    defaultShop: 'Mon petit magasin',
+    defaultFooter: 'Merci de votre achat !\nÀ bientôt !'
+  }
+};
+
+// The names shown in the language menu (each language in its own language). Add new languages here too.
+var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'Français' };
+
+</script>
+
+<script>
+/* =====================================================================================
    KIDS CASH REGISTER - application code
    Sections:  1. Small helpers      2. Log (problem report)    3. Saved data
               4. Barcode helpers    5. Camera scanner          6. Cash register screen
@@ -331,15 +906,62 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   'use strict';
 
   var APP_NAME = 'kids-register';          // used in the backup file name
-  var APP_VERSION = '1.7';      // filled in automatically by the build script
+  var APP_VERSION = '1.8';      // filled in automatically by the build script
   var DATA_KEY = 'kidsRegister.data';      // where products + settings live in the browser
-  var DEFAULT_FOOTER = 'Thank you for shopping with us!\nCome back soon!';
   var LOG_KEY = 'kidsRegister.log';        // where the problem report lives in the browser
 
   /* ---------------------------------------------------------------------------
      1. SMALL HELPERS
      --------------------------------------------------------------------------- */
   function $(id) { return document.getElementById(id); }
+
+  /* ---------------------------------------------------------------------------
+     LANGUAGE
+     All texts live in the TRANSLATIONS block (variable TEXT) above this code. t('key') returns the text in the
+     current language (falls back to English), and {placeholders} are filled from the second argument.
+     --------------------------------------------------------------------------- */
+  var LANG = 'en';
+
+  function t(key, params) {
+    var s = TEXT[LANG] && TEXT[LANG][key];
+    if (s === undefined) { s = TEXT.en[key]; }
+    if (s === undefined) { return key; }                    // unknown key: show the key so it is easy to spot
+    return s.replace(/\{(\w+)\}/g, function (m, name) { return (params && params[name] !== undefined) ? params[name] : m; });
+  }
+
+  // The language the device is set to (first match among the app's languages), or English.
+  function detectLanguage() {
+    var list = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language || 'en'];
+    for (var i = 0; i < list.length; i++) {
+      var code = String(list[i]).toLowerCase().split('-')[0];
+      if (TEXT[code]) { return code; }
+    }
+    return 'en';
+  }
+
+  // Put the texts of the current language into the page (everything marked data-i18n...).
+  function applyLanguage() {
+    document.documentElement.lang = LANG;
+    document.title = t('appTitle');
+    var i, nodes = document.querySelectorAll('[data-i18n]');
+    for (i = 0; i < nodes.length; i++) { nodes[i].textContent = t(nodes[i].getAttribute('data-i18n')); }
+    nodes = document.querySelectorAll('[data-i18n-html]');
+    for (i = 0; i < nodes.length; i++) { nodes[i].innerHTML = t(nodes[i].getAttribute('data-i18n-html')); }
+    nodes = document.querySelectorAll('[data-i18n-ph]');
+    for (i = 0; i < nodes.length; i++) { nodes[i].setAttribute('placeholder', t(nodes[i].getAttribute('data-i18n-ph'))); }
+  }
+
+  // Settings used until the user changes them. Shop name and receipt footer follow the language.
+  function defaultSettings() {
+    return { shopName: t('defaultShop'), currency: '$', footer: t('defaultFooter'), language: '' };
+  }
+
+  // Is this text one of the built-in default texts (in any language)? Used to keep untouched defaults in step.
+  function isDefaultText(key, value) {
+    for (var code in TEXT) { if (TEXT[code][key] === value) { return true; } }
+    return false;
+  }
+
 
   // Make an HTML element. Text is added with textContent so typed names can never break the page.
   function el(tag, cls, text) {
@@ -490,7 +1112,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
      --------------------------------------------------------------------------- */
   var Store = {
     canSave: true,
-    data: { products: {}, settings: { shopName: 'My Little Shop', currency: '$', footer: DEFAULT_FOOTER } },
+    data: { products: {}, settings: null },     // settings are filled in at start-up (see defaultSettings)
 
     load: function () {
       try {
@@ -498,7 +1120,10 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
         if (raw) {
           var parsed = JSON.parse(raw);
           var clean = validateBackupContent(parsed, true);
-          if (clean.ok) { this.data = { products: clean.products, settings: clean.settings }; }
+          if (clean.ok) {
+            this.data = { products: clean.products, settings: clean.settings };
+            if (clean.settings.language) { LANG = clean.settings.language; }   // the language chosen earlier
+          }
           else { Log.add('WARN', 'Saved data looked damaged and was ignored: ' + clean.error); }
         }
         // Test that saving really works (private browsing in some browsers refuses).
@@ -519,7 +1144,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       } catch (e) {
         this.canSave = false;
         Log.add('ERROR', 'Could not save data: ' + e.name);
-        toast('Could not save. Please save a backup!', true);
+        toast(t('saveFailed'), true);
       }
       $('storageWarning').style.display = this.canSave ? 'none' : 'block';
     }
@@ -534,9 +1159,9 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   // Check backup/saved content and return clean data, or an error message.
   // Used both for the backup file the user loads and for what is stored in the browser.
   function validateBackupContent(obj, fromBrowser) {
-    if (!obj || typeof obj !== 'object' || obj instanceof Array) { return { ok: false, error: 'The file is not a backup from this app.' }; }
-    if (obj.app !== APP_NAME) { return { ok: false, error: 'This file does not look like a Kids Cash Register backup.' }; }
-    if (!(obj.products instanceof Array)) { return { ok: false, error: 'The backup has no product list.' }; }
+    if (!obj || typeof obj !== 'object' || obj instanceof Array) { return { ok: false, error: t('errNotBackup') }; }
+    if (obj.app !== APP_NAME) { return { ok: false, error: t('errWrongApp') }; }
+    if (!(obj.products instanceof Array)) { return { ok: false, error: t('errNoList') }; }
     var products = {}, good = 0, skipped = 0;
     obj.products.forEach(function (p) {
       var ok = p && typeof p === 'object' && typeof p.code === 'string' && /^\d{8}$|^\d{13}$/.test(p.code) &&
@@ -544,12 +1169,13 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
                typeof p.priceCents === 'number' && p.priceCents % 1 === 0 && p.priceCents >= 0 && p.priceCents <= 99999999;
       if (ok) { products[p.code] = { name: p.name, cents: p.priceCents }; good++; } else { skipped++; }
     });
-    if (good === 0 && skipped > 0) { return { ok: false, error: 'None of the products in this file were readable.' }; }
-    var settings = { shopName: 'My Little Shop', currency: '$', footer: DEFAULT_FOOTER };
+    if (good === 0 && skipped > 0) { return { ok: false, error: t('errNoneReadable') }; }
+    var settings = defaultSettings();
     if (obj.settings && typeof obj.settings === 'object') {
       if (typeof obj.settings.shopName === 'string' && obj.settings.shopName.length <= 40) { settings.shopName = obj.settings.shopName; }
       if (typeof obj.settings.currency === 'string' && obj.settings.currency.length <= 3 && obj.settings.currency.length > 0) { settings.currency = obj.settings.currency; }
       if (typeof obj.settings.footer === 'string' && obj.settings.footer.length <= 120) { settings.footer = obj.settings.footer; }   // older backups have no footer: default is kept
+      if (typeof obj.settings.language === 'string' && TEXT[obj.settings.language]) { settings.language = obj.settings.language; }
     }
     return { ok: true, products: products, settings: settings, count: good, skipped: skipped };
   }
@@ -589,14 +1215,14 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   // which is how the camera reader reports them too, so both ways always match.
   function cleanTypedCode(raw) {
     var code = String(raw).replace(/[\s-]/g, '');
-    if (code === '') { return { ok: false, message: 'Please type the barcode number first.' }; }
-    if (!/^\d+$/.test(code)) { return { ok: false, message: 'A barcode number only has digits (0-9). Please check what you typed.' }; }
+    if (code === '') { return { ok: false, message: t('codeEmpty') }; }
+    if (!/^\d+$/.test(code)) { return { ok: false, message: t('codeDigits') }; }
     if (code.length === 12) { code = '0' + code; }
     if (code.length !== 8 && code.length !== 13) {
-      return { ok: false, message: 'Barcode numbers have 8, 12 or 13 digits. You typed ' + code.length + '.' };
+      return { ok: false, message: t('codeLength', { n: code.length }) };
     }
     if (!checkDigitOk(code)) {
-      return { ok: false, message: 'Those numbers do not make a real barcode. Please check for a typing mistake.' };
+      return { ok: false, message: t('codeCheck') };
     }
     return { ok: true, code: code };
   }
@@ -630,17 +1256,17 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       Log.add('INFO', 'Camera start requested (' + mode + ' screen)');
 
       if (typeof ZXing === 'undefined') {
-        return this.fail('The barcode reader did not load. Please reload the page.', 'ZXing library missing');
+        return this.fail(t('zxingMissing'), 'ZXing library missing');
       }
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         var why = (window.isSecureContext === false)
-          ? 'The camera only works on a secure page (a web address starting with https://). You can still type barcode numbers.'
-          : 'This browser cannot use the camera. Try Safari or Chrome. You can still type barcode numbers.';
+          ? t('needHttps')
+          : t('noCameraApi');
         return this.fail(why, 'getUserMedia unavailable, secureContext=' + window.isSecureContext);
       }
 
       this.state = 'starting';
-      updateCameraUI('Starting the camera... tap Allow if asked.');
+      updateCameraUI(t('startingCamera'));
 
       // Step 1: ask for the camera (the back camera if there is one).
       this.openCamera().then(function (stream) {
@@ -665,13 +1291,13 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
         var name = (e && e.name) || 'Error';
         var msg;
         if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') {
-          msg = 'The camera is blocked. Allow camera access for this page (iPad: Settings > Safari > Camera; computer: click the camera icon in the address bar), then reload the page.';
+          msg = t('cameraBlocked');
         } else if (name === 'NotFoundError' || name === 'OverconstrainedError') {
-          msg = 'No camera was found on this device. You can still type barcode numbers.';
+          msg = t('noCameraFound');
         } else if (name === 'NotReadableError' || name === 'AbortError') {
-          msg = 'The camera is being used by another app. Close that app and try again.';
+          msg = t('cameraBusy');
         } else {
-          msg = 'The camera could not be started. Please try again.';
+          msg = t('cameraFailed');
         }
         self.fail(msg, 'Camera error: ' + name + ' ' + ((e && e.message) || ''));
       });
@@ -700,7 +1326,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
         return;
       }
       if (new Date().getTime() - startedAt > 8000) {
-        this.fail('The camera started but shows no picture. Close other apps or tabs that use the camera, then try again.',
+        this.fail(t('noPicture'),
           'No picture after 8 seconds: readyState=' + v.readyState + ', size=' + v.videoWidth + 'x' + v.videoHeight + ', paused=' + v.paused);
         return;
       }
@@ -731,7 +1357,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
         if (track && track.applyConstraints) { track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function () { /* optional */ }); }
       } catch (e3) { /* optional */ }
       Log.add('INFO', 'Camera is showing a picture (' + v.videoWidth + 'x' + v.videoHeight + '); built-in finder: ' + !!this.detector);
-      updateCameraUI('Camera is on. Hold a barcode in front of it.');
+      updateCameraUI(t('cameraOn'));
       this.loop(token);
     },
 
@@ -840,9 +1466,9 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     ['register', 'products'].forEach(function (m) {
       var active = Scanner.mode === m && Scanner.state !== 'off';
       $(m + 'Cam').className = 'camera' + (Scanner.mode === m && Scanner.state === 'on' ? ' on' : '');
-      $(m + 'CamBtn').textContent = active ? 'Stop camera' : 'Start camera';
+      $(m + 'CamBtn').textContent = active ? t('stopCamera') : t('startCamera');
       $(m + 'CamBtn').className = 'btn' + (active ? ' red' : '');
-      if (Scanner.mode === m || message === '') { setStatus(m + 'Status', message, isError); }
+      if (message !== null && (Scanner.mode === m || message === '')) { setStatus(m + 'Status', message, isError); }   // null = only refresh the buttons
     });
   }
   // Brief colored frame around the camera: green = good, red = problem.
@@ -876,7 +1502,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       lastUnknownCode = code;
       beep(false);
       flashCamera('register', 'flash-bad');
-      $('unknownText').textContent = 'Oops! This item is not in the shop yet (barcode ' + code + ').';
+      $('unknownText').textContent = t('unknownItem', { code: code });
       $('unknownNotice').className = 'notice show';
       Log.add('WARN', 'Unknown barcode in register: ' + code);
       return;
@@ -887,7 +1513,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     cart.forEach(function (line) { if (line.code === code) { found = line; } });
     if (found) { if (found.qty < 99) { found.qty++; } } else { cart.push({ code: code, qty: 1 }); }
     Log.add('INFO', 'Added to list: ' + code + ' (' + cart.length + ' different items)');
-    toast('Added: ' + product.name);
+    toast(t('added', { name: product.name }));
     renderCart();
   }
 
@@ -897,7 +1523,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     var total = 0;
     // Drop lines whose product was deleted.
     cart = cart.filter(function (line) { return !!Store.data.products[line.code]; });
-    if (cart.length === 0) { list.appendChild(el('div', 'empty', 'Nothing here yet. Scan an item to begin!')); }
+    if (cart.length === 0) { list.appendChild(el('div', 'empty', t('cartEmpty'))); }
     cart.forEach(function (line) {
       var p = Store.data.products[line.code];
       var lineTotal = p.cents * line.qty;
@@ -906,19 +1532,19 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       var row = el('div', 'cart-row');
       var info = el('div', 'cart-info');
       info.appendChild(el('div', 'cart-name', p.name));
-      info.appendChild(el('div', 'cart-each', money(p.cents) + ' each'));
+      info.appendChild(el('div', 'cart-each', t('each', { price: money(p.cents) })));
       row.appendChild(info);
 
       var qty = el('div', 'qty');
-      var minus = el('button', '', '−'); minus.type = 'button'; minus.setAttribute('aria-label', 'One less');
-      var plus = el('button', '', '+'); plus.type = 'button'; plus.setAttribute('aria-label', 'One more');
+      var minus = el('button', '', '−'); minus.type = 'button'; minus.setAttribute('aria-label', t('oneLess'));
+      var plus = el('button', '', '+'); plus.type = 'button'; plus.setAttribute('aria-label', t('oneMore'));
       minus.onclick = function () { if (line.qty > 1) { line.qty--; renderCart(); } };
       plus.onclick = function () { if (line.qty < 99) { line.qty++; renderCart(); } };
       qty.appendChild(minus); qty.appendChild(el('span', '', String(line.qty))); qty.appendChild(plus);
       row.appendChild(qty);
 
       row.appendChild(el('div', 'cart-sum', money(lineTotal)));
-      var rm = el('button', 'rm', '×'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove');
+      var rm = el('button', 'rm', '×'); rm.type = 'button'; rm.setAttribute('aria-label', t('remove'));
       rm.onclick = function () { cart.splice(cart.indexOf(line), 1); Log.add('INFO', 'Removed from list: ' + line.code); renderCart(); };
       row.appendChild(rm);
       list.appendChild(row);
@@ -952,6 +1578,9 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   }
   // Should "Print receipt" make a PDF for the share sheet instead of printing directly?
   function printNeedsPdf() { return isIOS() && isStandalone() && isNewIOS(); }
+
+  // "1 item" / "3 items" for the receipt.
+  function itemsText(n) { return t(n === 1 ? 'itemOne' : 'itemMany', { n: n }); }
 
   function spaces(n) { var s = ''; while (s.length < n) { s += ' '; } return s; }
   function centerText(s) { return spaces(Math.max(0, Math.floor((PDF_COLS - s.length) / 2))) + s; }
@@ -1002,11 +1631,11 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       if (!p) { return; }
       items += line.qty;
       add(twoColumns(line.qty + ' x ' + p.name, money(p.cents * line.qty)));
-      if (line.qty > 1) { add(['    (' + money(p.cents) + ' each)']); }
+      if (line.qty > 1) { add(['    (' + t('each', { price: money(p.cents) }) + ')']); }
     });
     add([rule]);
-    add(twoColumns('TOTAL', money(cartTotalCents())), true);
-    add([centerText(items + (items === 1 ? ' item' : ' items')), rule]);
+    add(twoColumns(t('receiptTotal'), money(cartTotalCents())), true);
+    add([centerText(itemsText(items)), rule]);
     Store.data.settings.footer.split(/\r?\n/).forEach(function (l) {
       if (l.replace(/\s/g, '') !== '') { add(wrapText(l, PDF_COLS).map(centerText)); }
     });
@@ -1044,21 +1673,21 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
 
   // Make the PDF and open the share sheet (Print / Save to Files / AirDrop...). Falls back to opening or downloading it.
   function shareReceiptPdf() {
-    if (cart.length === 0) { toast('Scan something first!', true); return; }
+    if (cart.length === 0) { toast(t('scanFirst'), true); return; }
     var bytes, blob, filename = 'receipt-' + stampForFile(new Date()) + '.pdf';
     try {
       bytes = makeReceiptPdf();
       blob = new Blob([bytes], { type: 'application/pdf' });
     } catch (e) {
       Log.add('ERROR', 'Could not make the PDF: ' + e.name + ' ' + e.message);
-      toast('The receipt could not be created.', true);
+      toast(t('pdfFailed'), true);
       return;
     }
     Log.add('INFO', 'Receipt PDF created (' + bytes.length + ' bytes), standalone=' + isStandalone() + ', newIOS=' + isNewIOS());
     var file = null;
     try { file = new File([blob], filename, { type: 'application/pdf' }); } catch (e1) { file = null; }
     if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: 'Receipt' }).then(function () {
+      navigator.share({ files: [file], title: t('printReceipt') }).then(function () {
         Log.add('INFO', 'Receipt shared');
       }).catch(function (e) {
         if (e && e.name === 'AbortError') { Log.add('INFO', 'Share sheet closed without choosing'); return; }   // user cancelled
@@ -1085,7 +1714,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
 
   // Build the receipt, then open the iPad's print window.
   function printReceipt() {
-    if (cart.length === 0) { toast('Scan something first!', true); return; }
+    if (cart.length === 0) { toast(t('scanFirst'), true); return; }
     var r = $('receipt');
     clearNode(r);
     r.appendChild(el('h1', '', Store.data.settings.shopName));
@@ -1102,7 +1731,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       table.appendChild(tr);
       if (line.qty > 1) {
         var sub = el('tr');
-        sub.appendChild(el('td', '', '    (' + money(p.cents) + ' each)'));
+        sub.appendChild(el('td', '', '    (' + t('each', { price: money(p.cents) }) + ')'));
         sub.appendChild(el('td', 'num', ''));
         table.appendChild(sub);
       }
@@ -1111,11 +1740,11 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     r.appendChild(el('div', 'line'));
     var totalTable = el('table', 'big');
     var tt = el('tr', 'big');
-    tt.appendChild(el('td', 'big', 'TOTAL'));
+    tt.appendChild(el('td', 'big', t('receiptTotal')));
     tt.appendChild(el('td', 'num big', money(cartTotalCents())));
     totalTable.appendChild(tt);
     r.appendChild(totalTable);
-    r.appendChild(el('div', 'center', items + (items === 1 ? ' item' : ' items')));
+    r.appendChild(el('div', 'center', itemsText(items)));
     r.appendChild(el('div', 'line'));
     // The footer text from Settings; each typed line becomes its own centered line.
     Store.data.settings.footer.split(/\r?\n/).forEach(function (line) {
@@ -1126,12 +1755,12 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     Log.add('INFO', 'Print receipt: ' + items + ' items, ' + cart.length + ' lines');
     try { window.print(); } catch (e) {
       Log.add('ERROR', 'Printing failed: ' + e.name);
-      toast('Printing did not work on this device.', true);
+      toast(t('printFailed'), true);
     }
   }
 
   function newCustomer() {
-    if (cart.length > 0 && !confirm('Clear the shopping list and start with the next customer?')) { return; }
+    if (cart.length > 0 && !confirm(t('confirmNext'))) { return; }
     cart = [];
     $('unknownNotice').className = 'notice';
     Log.add('INFO', 'New customer - shopping list cleared');
@@ -1157,8 +1786,8 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     $('pCode').value = code;
     $('formError').textContent = '';
     loadCodeIntoForm(code, true);
-    if (Store.data.products[code]) { setStatus('productsStatus', 'Scanned ' + code + ' - already saved. You can change it below.', false); }
-    else { setStatus('productsStatus', 'Scanned ' + code + ' - now type a name and price.', false); $('pName').focus(); }
+    if (Store.data.products[code]) { setStatus('productsStatus', t('scannedKnown', { code: code }), false); }
+    else { setStatus('productsStatus', t('scannedNew', { code: code }), false); $('pName').focus(); }
   }
 
   // Show the saved details for a barcode. For a barcode we don't know, the old name and price are
@@ -1171,7 +1800,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     if (p) {
       $('pName').value = p.name;
       $('pPrice').value = (p.cents / 100).toFixed(2);
-      note.textContent = 'This product is already saved. Saving will update it.';
+      note.textContent = t('alreadySaved');
       note.className = 'notice info show';
     } else {
       note.className = 'notice info';
@@ -1189,16 +1818,16 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     var c = cleanTypedCode($('pCode').value);
     if (!c.ok) { err.textContent = c.message; return; }
     var name = $('pName').value.replace(/^\s+|\s+$/g, '');
-    if (name === '') { err.textContent = 'Please type a name for the product.'; return; }
+    if (name === '') { err.textContent = t('needName'); return; }
     var cents = parsePrice($('pPrice').value);
-    if (cents < 0) { err.textContent = 'Please type a price using numbers, like 1.50.'; return; }
+    if (cents < 0) { err.textContent = t('needPrice'); return; }
     var existed = !!Store.data.products[c.code];
     Store.data.products[c.code] = { name: name, cents: cents };
     Store.save();
     Log.add('INFO', (existed ? 'Updated' : 'Saved new') + ' product ' + c.code + ' (' + Object.keys(Store.data.products).length + ' products in total)');
-    toast(existed ? 'Updated: ' + name : 'Saved: ' + name);
+    toast(t(existed ? 'updated' : 'saved', { name: name }));
     clearForm();
-    setStatus('productsStatus', 'Saved! Scan the next product.', false);
+    setStatus('productsStatus', t('savedNext'), false);
     renderProducts();
   }
 
@@ -1210,8 +1839,8 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     var q = $('prodSearch').value.toLowerCase().replace(/^\s+|\s+$/g, '');
     all.sort(function (a, b) { return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1; });
     var shown = all.filter(function (p) { return q === '' || p.name.toLowerCase().indexOf(q) !== -1 || p.code.indexOf(q) !== -1; });
-    if (all.length === 0) { list.appendChild(el('div', 'empty', 'No products yet. Scan a barcode to add your first one!')); }
-    else if (shown.length === 0) { list.appendChild(el('div', 'empty', 'Nothing matches your search.')); }
+    if (all.length === 0) { list.appendChild(el('div', 'empty', t('noProducts'))); }
+    else if (shown.length === 0) { list.appendChild(el('div', 'empty', t('noMatch'))); }
     shown.forEach(function (p) {
       var row = el('div', 'prod-row');
       var main = el('div', 'prod-main');
@@ -1219,15 +1848,15 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       main.appendChild(el('div', 'prod-code', p.code));
       row.appendChild(main);
       row.appendChild(el('div', 'prod-price', money(p.priceCents)));
-      var edit = el('button', 'btn small-btn', 'Edit'); edit.type = 'button';
+      var edit = el('button', 'btn small-btn', t('edit')); edit.type = 'button';
       edit.onclick = function () {
         $('pCode').value = p.code; $('formError').textContent = '';
         loadCodeIntoForm(p.code);
         window.scrollTo(0, 0);
       };
-      var del = el('button', 'btn small-btn red', 'Delete'); del.type = 'button';
+      var del = el('button', 'btn small-btn red', t('del')); del.type = 'button';
       del.onclick = function () {
-        if (!confirm('Delete "' + p.name + '" from the shop?')) { return; }
+        if (!confirm(t('confirmDelete', { name: p.name }))) { return; }
         delete Store.data.products[p.code];
         Store.save();
         Log.add('INFO', 'Deleted product ' + p.code);
@@ -1244,13 +1873,13 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
   function saveSettings() {
     var shop = $('sShop').value.replace(/^\s+|\s+$/g, '');
     var cur = $('sCur').value.replace(/\s/g, '');
-    if (shop === '') { $('settingsError').textContent = 'Please give your shop a name.'; return; }
-    if (cur === '') { $('settingsError').textContent = 'Please type a money symbol, like $.'; return; }
+    if (shop === '') { $('settingsError').textContent = t('needShop'); return; }
+    if (cur === '') { $('settingsError').textContent = t('needCurrency'); return; }
     $('settingsError').textContent = '';
-    Store.data.settings = { shopName: shop, currency: cur, footer: $('sFooter').value.replace(/^\s+|\s+$/g, '') };
+    Store.data.settings = { shopName: shop, currency: cur, language: LANG, footer: $('sFooter').value.replace(/^\s+|\s+$/g, '') };
     Store.save();
     Log.add('INFO', 'Settings saved');
-    toast('Settings saved');
+    toast(t('settingsSaved'));
     renderProducts(); renderCart();
   }
 
@@ -1264,28 +1893,28 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       var filename = APP_NAME + '-backup-' + stampForFile(now) + '.json';
       downloadText(filename, JSON.stringify(backup, null, 2), 'application/json');
       Log.add('INFO', 'Backup saved: ' + backup.products.length + ' products, file ' + filename);
-      setStatus('backupStatus', 'Backup created: ' + filename + '. Look in your Downloads (on iPad: Files app > Downloads).', false);
+      setStatus('backupStatus', t('backupDone', { file: filename }), false);
     } catch (e) {
       Log.add('ERROR', 'Backup failed: ' + e.name + ' ' + e.message);
-      setStatus('backupStatus', 'Sorry, the backup could not be created on this device.', true);
+      setStatus('backupStatus', t('backupFail'), true);
     }
   }
 
   function importBackup(file) {
     if (!file) { return; }
     Log.add('INFO', 'Loading backup file (' + file.size + ' bytes)');
-    if (file.size > 5 * 1024 * 1024) { setStatus('backupStatus', 'That file is too big to be a backup from this app.', true); return; }
+    if (file.size > 5 * 1024 * 1024) { setStatus('backupStatus', t('fileTooBig'), true); return; }
     var reader = new FileReader();
     reader.onerror = function () {
       Log.add('ERROR', 'Could not read backup file');
-      setStatus('backupStatus', 'The file could not be read. Please try again.', true);
+      setStatus('backupStatus', t('fileReadFail'), true);
     };
     reader.onload = function () {
       var parsed;
       try { parsed = JSON.parse(reader.result); }
       catch (e) {
         Log.add('ERROR', 'Backup is not valid JSON: ' + e.message);
-        setStatus('backupStatus', 'That file is not a backup file (it could not be understood).', true);
+        setStatus('backupStatus', t('notJson'), true);
         return;
       }
       var result = validateBackupContent(parsed, false);
@@ -1294,23 +1923,45 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
         setStatus('backupStatus', result.error, true);
         return;
       }
-      var question = 'Load this backup? It has ' + result.count + ' products and will REPLACE everything currently saved here.';
-      if (result.skipped > 0) { question += ' (' + result.skipped + ' damaged entries will be skipped.)'; }
-      if (!confirm(question)) { setStatus('backupStatus', 'Nothing was changed.', false); return; }
+      var question = t('confirmLoad', { count: result.count });
+      if (result.skipped > 0) { question += t('skippedNote', { n: result.skipped }); }
+      if (!confirm(question)) { setStatus('backupStatus', t('nothingChanged'), false); return; }
       Store.data = { products: result.products, settings: result.settings };
       Store.save();
       cart = [];
       Log.add('INFO', 'Backup loaded: ' + result.count + ' products, ' + result.skipped + ' skipped');
-      setStatus('backupStatus', 'Done! Loaded ' + result.count + ' products' + (result.skipped ? ' (' + result.skipped + ' skipped)' : '') + '.', false);
-      fillSettings(); renderProducts(); renderCart();
+      if (result.settings.language) { LANG = result.settings.language; } else { Store.data.settings.language = LANG; Store.save(); }   // old backups keep the current language
+      applyLanguage();
+      setStatus('backupStatus', result.skipped ? t('loadedSkipped', { count: result.count, n: result.skipped }) : t('loadedDone', { count: result.count }), false);
+      fillSettings(); renderProducts(); renderCart(); updateCameraUI(null);
     };
     reader.readAsText(file);
+  }
+
+  // The user picked another language in Settings: switch at once and remember it.
+  function setLanguage(code) {
+    if (!TEXT[code] || code === LANG) { return; }
+    var s = Store.data.settings;
+    var shopWasDefault = isDefaultText('defaultShop', s.shopName);
+    var footerWasDefault = isDefaultText('defaultFooter', s.footer);
+    LANG = code;
+    s.language = code;
+    if (shopWasDefault) { s.shopName = t('defaultShop'); }        // untouched default texts follow the language
+    if (footerWasDefault) { s.footer = t('defaultFooter'); }
+    Store.save();
+    Log.add('INFO', 'Language changed to ' + code);
+    applyLanguage();
+    updateCameraUI(null);
+    setStatus('registerStatus', '', false); setStatus('productsStatus', '', false);
+    fillSettings(); renderCart(); renderProducts(); refreshLogBox();
+    if (Object.keys(Store.data.products).length === 0) { setStatus('registerStatus', t('firstRun', { tab: t('tabProducts') }), false); }
   }
 
   function fillSettings() {
     $('sShop').value = Store.data.settings.shopName;
     $('sCur').value = Store.data.settings.currency;
     $('sFooter').value = Store.data.settings.footer;
+    $('sLang').value = LANG;
   }
   function refreshLogBox() { $('logBox').value = Log.fullText(); $('logBox').scrollTop = $('logBox').scrollHeight; }
 
@@ -1331,7 +1982,17 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
 
   function init() {
     Log.add('INFO', '--- App opened (version ' + APP_VERSION + ') ---');
-    Store.load();
+    LANG = detectLanguage();                 // start with the device language ...
+    Store.data.settings = defaultSettings();
+    Store.load();                            // ... unless a language was chosen earlier (loaded here)
+    var langMenu = $('sLang');
+    for (var code in languageNames) {
+      var opt = document.createElement('option'); opt.value = code; opt.textContent = languageNames[code]; langMenu.appendChild(opt);
+    }
+    langMenu.onchange = function () { setLanguage(this.value); };
+    applyLanguage();
+    fillSettings();
+    updateCameraUI(null);
     $('storageWarning').style.display = Store.canSave ? 'none' : 'block';
     $('verTag').textContent = 'v' + APP_VERSION;
 
@@ -1349,7 +2010,7 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
       showView('products');
       $('pCode').value = code;
       loadCodeIntoForm(code);
-      setStatus('productsStatus', 'Type a name and price for barcode ' + code + '.', false);
+      setStatus('productsStatus', t('typeNamePrice', { code: code }), false);
       $('pName').focus();
     };
 
@@ -1382,22 +2043,22 @@ ol.steps { padding-left: 22px; margin: 0 0 10px 0; line-height: 1.5; }
     $('copyLogBtn').onclick = function () {
       refreshLogBox();
       copyText(Log.fullText(), function (ok) {
-        setStatus('logStatus', ok ? 'Copied! Now paste it into a message.' : 'Copy did not work. Press and hold in the box above, choose Select All, then Copy.', !ok);
+        setStatus('logStatus', ok ? t('copied') : t('copyFailed'), !ok);
       });
     };
     $('downloadLogBtn').onclick = function () {
       downloadText(APP_NAME + '-report-' + stampForFile(new Date()) + '.txt', Log.fullText(), 'text/plain');
-      setStatus('logStatus', 'Report downloaded.', false);
+      setStatus('logStatus', t('downloaded'), false);
     };
     $('clearLogBtn').onclick = function () {
-      Log.clear(); Log.add('INFO', 'Report cleared by user'); refreshLogBox(); setStatus('logStatus', 'Report cleared.', false);
+      Log.clear(); Log.add('INFO', 'Report cleared by user'); refreshLogBox(); setStatus('logStatus', t('cleared'), false);
     };
 
     renderCart();
     renderProducts();
     // First time with no products: point the child/parent to the right place.
     if (Object.keys(Store.data.products).length === 0) {
-      setStatus('registerStatus', 'No products yet - tap "Add Products" above to create some first.', false);
+      setStatus('registerStatus', t('firstRun', { tab: t('tabProducts') }), false);
     }
   }
 
