@@ -913,7 +913,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
   'use strict';
 
   var APP_NAME = 'kids-register';          // used in the backup file name
-  var APP_VERSION = '1.14';      // filled in automatically by the build script
+  var APP_VERSION = '1.15';      // filled in automatically by the build script
   var DATA_KEY = 'kidsRegister.data';      // where products + settings live in the browser
   var LOG_KEY = 'kidsRegister.log';        // where the problem report lives in the browser
 
@@ -1255,6 +1255,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
     needClick: false,    // true while the browser refused to start the video and we wait for a click
     hintShown: false,    // true once the "please click" hint is on screen
     clickHandler: null,  // the waiting-for-a-click listener
+    undoMotion: null,    // cleanup functions for the "picture jumps" diagnostics
     lastLook: '',        // name of the look that made the last reading (for the log)
     loggedProblem: false,
     lastCode: '',
@@ -1295,6 +1296,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
         v.muted = true;
         v.setAttribute('playsinline', '');
         v.srcObject = stream;
+        self.watchMotion(token, stream, v);
         try {
           self.playAnswered = false;
           var p = v.play();
@@ -1329,14 +1331,79 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
     // Ask for the back camera. If that is refused for a technical reason (many computers have only
     // a front webcam), ask again for "any camera".
     openCamera: function () {
-      var md = navigator.mediaDevices;
-      return md.getUserMedia({ audio: false, video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } })
+      var md = navigator.mediaDevices, self = this;
+      return md.getUserMedia({ audio: false, video: this.cameraWish() })
         .catch(function (e) {
           var name = e && e.name;
           if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError' || name === 'NotReadableError') { throw e; }
           Log.add('WARN', 'First camera request failed (' + name + '), trying again with simple settings');
           return md.getUserMedia({ audio: false, video: true });
+        })
+        .then(function (stream) { return self.pickMainLens(stream); });
+    },
+
+    // What we ask the camera for: the back camera, about 1280x720.
+    cameraWish: function () { return { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }; },
+
+    // iPhone/iPad only. Newer iPhones offer the back camera as a "multi-lens camera" that switches by itself
+    // between the main lens and the ultra-wide lens. The lenses sit one above the other, so in portrait mode every
+    // switch makes the picture jump up or down. To avoid that, we ask for the plain main lens instead.
+    // If anything goes wrong we fall back to the normal request, exactly like before. Other devices are not touched.
+    pickMainLens: function (stream) {
+      var md = navigator.mediaDevices, self = this;
+      var apple = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (!apple || !md.enumerateDevices) { return stream; }
+      return md.enumerateDevices().then(function (list) {
+        var back = list.filter(function (d) { return d.kind === 'videoinput' && !/front|user|selfie|vorder|frontal|avant|facetime|delantera|anteriore/i.test(d.label || ''); });
+        var names = back.map(function (d) { return d.label || '(no name)'; });
+        Log.add('INFO', 'Camera note: back cameras offered: ' + (names.length ? names.join(' | ') : 'none'));
+        if (back.length < 2) { return stream; }
+        // The plain main camera has the shortest name ("Back Camera"); the others add words like Ultra Wide, Dual, Triple.
+        var pick = back[0];
+        back.forEach(function (d) { if ((d.label || '').length < (pick.label || '').length) { pick = d; } });
+        var track = stream.getVideoTracks()[0], cur = (track && track.getSettings) ? track.getSettings().deviceId : null;
+        if (!pick.deviceId || cur === pick.deviceId) { Log.add('INFO', 'Camera note: already using the main camera (' + (pick.label || '?') + ')'); return stream; }
+        Log.add('INFO', 'Camera note: switching to the main camera "' + (pick.label || '?') + '" to avoid lens switching');
+        self.stopStream(stream);       // the iPhone allows only one open camera at a time
+        var wish = self.cameraWish(); wish.deviceId = { exact: pick.deviceId }; delete wish.facingMode;
+        return md.getUserMedia({ audio: false, video: wish }).then(function (s2) {
+          Log.add('INFO', 'Camera note: main camera is open');
+          return s2;
+        }, function (e) {
+          Log.add('WARN', 'Camera note: main camera could not be opened (' + (e && e.name) + '), using the normal camera again');
+          return md.getUserMedia({ audio: false, video: self.cameraWish() });
         });
+      }, function (e) {
+        Log.add('WARN', 'Camera note: camera list unavailable (' + (e && e.name) + ')');
+        return stream;
+      });
+    },
+
+    // Light diagnostics for "the picture jumps": a few notes whenever the picture size, the orientation of the phone
+    // or the camera settings change. Capped at 30 lines per camera start; costs practically nothing.
+    watchMotion: function (token, stream, v) {
+      var self = this, count = 0, undo = [], last = '';
+      function note(msg) { if (token === self.token && count < 30) { count++; Log.add('INFO', 'Camera note: ' + msg); } }
+      function orient() { try { return (screen.orientation && screen.orientation.type) || (window.orientation !== undefined ? 'angle ' + window.orientation : 'unknown'); } catch (e) { return 'unknown'; } }
+      note('orientation=' + orient() + ', window=' + window.innerWidth + 'x' + window.innerHeight);
+      var onResize = function () { note('video picture size is now ' + v.videoWidth + 'x' + v.videoHeight + ', orientation=' + orient()); };
+      var onOrient = function () { note('phone orientation changed to ' + orient() + ', window=' + window.innerWidth + 'x' + window.innerHeight); };
+      v.addEventListener('resize', onResize); undo.push(function () { v.removeEventListener('resize', onResize); });
+      window.addEventListener('orientationchange', onOrient); undo.push(function () { window.removeEventListener('orientationchange', onOrient); });
+      var tr = stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+      var iv = setInterval(function () {
+        try {
+          var st = tr.getSettings();
+          var key = [st.width, st.height, st.zoom, st.focusDistance, st.frameRate ? Math.round(st.frameRate) : ''].join('/');
+          if (last && key !== last) { note('camera settings changed: ' + st.width + 'x' + st.height + ', zoom=' + (st.zoom || 'n/a') + ', fps=' + (st.frameRate ? Math.round(st.frameRate) : '?')); }
+          last = key;
+        } catch (e) { /* ignore */ }
+      }, 2000);
+      undo.push(function () { clearInterval(iv); });
+      this.undoMotion = undo;
+    },
+    clearMotionWatch: function () {
+      if (this.undoMotion) { this.undoMotion.forEach(function (fn) { try { fn(); } catch (e) { /* ignore */ } }); this.undoMotion = null; }
     },
 
     // Wait (up to 8 seconds) until the video really shows a picture.
@@ -1514,6 +1581,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
       this.token++;
       if (this.timer) { clearTimeout(this.timer); this.timer = null; }
       this.removeClickWatch();
+      this.clearMotionWatch();
       this.needClick = false;
       if (this.stream) { this.stopStream(this.stream); this.stream = null; }
       if (this.video) { try { this.video.srcObject = null; } catch (e) { /* ignore */ } }
