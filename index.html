@@ -90,6 +90,9 @@ textarea.field { min-height: 84px; resize: none; line-height: 1.3; }
 
 .status { min-height: 24px; margin: 4px 0 10px 0; font-size: 16px; color: #475569; }
 .status.error { color: #dc2626; font-weight: bold; }
+/* Two highlighted hints next to the camera: orange = "please click once", teal = "hold the barcode steady" */
+.status.hint-click { background: #fff7ed; border-left: 6px solid #f97316; color: #c2410c; font-weight: bold; border-radius: 8px; padding: 8px 12px; }
+.status.hint-tip { background: #f0fdfa; border-left: 6px solid #14b8a6; color: #0f766e; border-radius: 8px; padding: 8px 12px; }
 .notice {
   background: #fef2f2; border: 2px solid #ef4444; border-radius: 12px; padding: 12px; margin: 10px 0; display: none;
 }
@@ -441,7 +444,7 @@ var TEXT = {
     cameraBusy: 'The camera is being used by another app. Close that app and try again.',
     cameraFailed: 'The camera could not be started. Please try again.',
     noPicture: 'The camera started but shows no picture. Close other apps or tabs that use the camera, then try again.',
-    cameraOn: 'Camera is on. Hold a barcode in front of it.',
+    cameraOn: 'Camera is on. Hold the barcode steady in front of it, about 15-25 cm away, with good light and no reflections.',
     tapToStart: 'The camera is ready, but your browser has not started the picture yet. Please click once anywhere on this page.',
 
     unknownItem: 'Oops! This item is not in the shop yet (barcode {code}).',
@@ -579,7 +582,7 @@ var TEXT = {
     cameraBusy: 'Die Kamera wird von einer anderen App benutzt. Schliesse diese App und versuche es nochmal.',
     cameraFailed: 'Die Kamera konnte nicht gestartet werden. Bitte versuche es nochmal.',
     noPicture: 'Die Kamera wurde gestartet, zeigt aber kein Bild. Schliesse andere Apps oder Tabs, die die Kamera benutzen, und versuche es nochmal.',
-    cameraOn: 'Kamera ist an. Halte einen Strichcode davor.',
+    cameraOn: 'Kamera ist an. Halte den Strichcode ruhig davor, etwa 15-25 cm entfernt, bei gutem Licht und ohne Spiegelung.',
     tapToStart: 'Die Kamera ist bereit, aber dein Browser hat das Bild noch nicht gestartet. Bitte klicke einmal irgendwo auf diese Seite.',
 
     unknownItem: 'Hoppla! Dieser Artikel ist noch nicht im Laden (Strichcode {code}).',
@@ -717,7 +720,7 @@ var TEXT = {
     cameraBusy: 'La fotocamera è usata da un\'altra app. Chiudi quell\'app e riprova.',
     cameraFailed: 'Impossibile avviare la fotocamera. Riprova.',
     noPicture: 'La fotocamera è partita ma non mostra nessuna immagine. Chiudi le altre app o schede che usano la fotocamera e riprova.',
-    cameraOn: 'La fotocamera è accesa. Tieni un codice a barre davanti.',
+    cameraOn: 'La fotocamera è accesa. Tieni il codice a barre fermo davanti, a circa 15-25 cm, con buona luce e senza riflessi.',
     tapToStart: 'La fotocamera è pronta, ma il browser non ha ancora avviato l\'immagine. Fai un clic ovunque su questa pagina.',
 
     unknownItem: 'Ops! Questo articolo non è ancora nel negozio (codice {code}).',
@@ -855,7 +858,7 @@ var TEXT = {
     cameraBusy: 'La caméra est utilisée par une autre appli. Ferme-la et réessaie.',
     cameraFailed: 'La caméra n\'a pas pu démarrer. Réessaie.',
     noPicture: 'La caméra a démarré mais n\'affiche aucune image. Ferme les autres applis ou onglets qui utilisent la caméra, puis réessaie.',
-    cameraOn: 'La caméra est allumée. Place un code-barres devant.',
+    cameraOn: 'La caméra est allumée. Tiens le code-barres bien immobile devant, à environ 15-25 cm, avec une bonne lumière et sans reflets.',
     tapToStart: 'La caméra est prête, mais ton navigateur n\'a pas encore lancé l\'image. Clique une fois n\'importe où sur cette page.',
 
     unknownItem: 'Oups ! Cet article n\'est pas encore dans le magasin (code {code}).',
@@ -910,7 +913,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
   'use strict';
 
   var APP_NAME = 'kids-register';          // used in the backup file name
-  var APP_VERSION = '1.11';      // filled in automatically by the build script
+  var APP_VERSION = '1.12';      // filled in automatically by the build script
   var DATA_KEY = 'kidsRegister.data';      // where products + settings live in the browser
   var LOG_KEY = 'kidsRegister.log';        // where the problem report lives in the browser
 
@@ -988,10 +991,11 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
   }
 
   // Set a status line (a plain message, or a red error message).
-  function setStatus(id, message, isError) {
+  // kind (optional) = 'click' or 'tip' for the two highlighted camera hints.
+  function setStatus(id, message, isError, kind) {
     var s = $(id);
     s.textContent = message || '';
-    s.className = 'status' + (isError ? ' error' : '');
+    s.className = 'status' + (isError ? ' error' : '') + (kind ? ' hint-' + kind : '');
   }
 
   // Beeps are made with the browser's sound engine (no sound files needed).
@@ -1254,6 +1258,8 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
     clickHandler: null,  // waits for a click after the browser refused to play the video
     undoWatch: null,     // cleanup functions for the diagnostic listeners
     watchTimers: null,   // timers for the diagnostic snapshots
+    ctx: null,           // drawing context of the hidden canvas
+    lastSource: '',      // which look (or the built-in finder) produced the last reading
     stats: null,         // counters about the barcode search, written to the log every few seconds
     loggedProblem: false,
     lastCode: '',
@@ -1321,7 +1327,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
     // a front webcam), ask again for "any camera".
     openCamera: function () {
       var md = navigator.mediaDevices;
-      return md.getUserMedia({ audio: false, video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } })
+      return md.getUserMedia({ audio: false, video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } })
         .catch(function (e) {
           var name = e && e.name;
           if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError' || name === 'NotReadableError') { throw e; }
@@ -1346,7 +1352,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
         if (!this.hintShown) {
           this.hintShown = true;
           Log.add('WARN', 'Video is paused although the camera delivers a picture - asking the user to click (' + this.describeVideo(v) + ')');
-          updateCameraUI(t('tapToStart'));
+          updateCameraUI(t('tapToStart'), false, 'click');
         }
         this.timer = setTimeout(function () { self.waitForPicture(token, startedAt); }, 100);
         return;
@@ -1378,26 +1384,31 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
         try { this.detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] }); } catch (e) { this.detector = null; }
       }
       this.canvas = document.createElement('canvas');
-      // Ask the camera to keep focusing (ignored by browsers that cannot do it).
-      try {
-        var track = this.stream.getVideoTracks()[0];
-        if (track && track.applyConstraints) { track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function () { /* optional */ }); }
-      } catch (e3) { /* optional */ }
+      this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });   // we read pixels all the time: tell the browser
+      try { this.ctx.imageSmoothingQuality = 'high'; } catch (e4) { /* optional */ }
+      this.setupFocus();
       Log.add('INFO', 'Camera is showing a picture (' + v.videoWidth + 'x' + v.videoHeight + '); built-in finder: ' + !!this.detector);
-      updateCameraUI(t('cameraOn'));
+      updateCameraUI(t('cameraOn'), false, 'tip');
       this.loop(token);
     },
 
-    // Look at the picture about 8 times a second, one look at a time.
+    // Look at the picture again and again, one look at a time. The next look starts as soon as the camera
+    // has delivered a new picture (if the browser can tell us), otherwise after a very short pause.
     loop: function (token) {
       var self = this;
       if (token !== this.token) { return; }
       this.lookOnce().then(function (text) {
         if (token !== self.token) { return; }
-        if (text) { self.found(text); }
+        if (text) { self.noteHit(); self.found(text); }
         self.maybeReportStats();
-        self.timer = setTimeout(function () { self.loop(token); }, 120);
+        self.scheduleNext(token);
       });
+    },
+    scheduleNext: function (token) {
+      var self = this, v = this.video, done = false;
+      function go() { if (done) { return; } done = true; clearTimeout(self.timer); self.loop(token); }
+      this.timer = setTimeout(go, (v && v.requestVideoFrameCallback) ? 250 : 10);   // 250 ms = safety net if no new picture comes
+      if (v && v.requestVideoFrameCallback) { try { v.requestVideoFrameCallback(go); } catch (e) { /* the safety net still works */ } }
     },
 
     // One look: alternates between the browser's finder (if any) and ZXing. Always resolves (never fails).
@@ -1408,6 +1419,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
       if (this.detector && n % 2 === 0) {
         this.stats.builtInLooks++;
         return this.detector.detect(this.video).then(function (codes) {
+          self.lastSource = 'built-in finder';
           return (codes && codes.length) ? codes[0].rawValue : null;
         }).catch(function (e) {
           if (!self.loggedProblem) { self.loggedProblem = true; Log.add('WARN', 'Built-in finder failed, using ZXing only: ' + (e && e.name)); }
@@ -1416,8 +1428,8 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
         });
       }
       return new Promise(function (resolve) {
-        var text = null;
-        try { text = self.zxingLook(n); } catch (e) {
+        var text = null, t0 = new Date().getTime();
+        try { text = self.zxingLook(n); self.stats.msSum += new Date().getTime() - t0; } catch (e) {
           self.stats.errors++;
           if (!self.loggedProblem) { self.loggedProblem = true; Log.add('ERROR', 'ZXing look failed: ' + (e && e.name) + ' ' + (e && e.message)); }
         }
@@ -1425,37 +1437,67 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
       });
     },
 
-    // Copy part of the video picture to a hidden canvas, turn it to grey, and give it to ZXing.
-    // Three different looks are rotated: the middle strip, the whole picture, and a taller strip
-    // with a different black/white method. This finds barcodes at many sizes and distances.
+    // The different "looks" taken one after the other. A look = which part of the picture, how big it is made,
+    // and what is done to it before reading. Why so many? A blurry webcam picture is read best when it is made
+    // smaller (the blur shrinks with it); a tiny barcode is read best when it is made bigger; a dull picture
+    // needs more contrast. Nobody knows in advance which one works, so all are tried in turn, many times a second.
+    // y/h = part of the picture (0-1 from the top), scale = size factor, stretch = more contrast, sharpen = crisper edges.
+    looks: [
+      { name: 'middle strip',        y: 0.30, h: 0.40, scale: 1.0 },
+      { name: 'strip + contrast',    y: 0.25, h: 0.50, scale: 1.0, stretch: true },
+      { name: 'strip x0.7',          y: 0.25, h: 0.50, scale: 0.7, stretch: true },
+      { name: 'strip x0.5',          y: 0.25, h: 0.50, scale: 0.5, stretch: true },
+      { name: 'zoom x1.5',           y: 0.30, h: 0.40, scale: 1.5, stretch: true, sharpen: true },
+      { name: 'whole picture x0.5',  y: 0.00, h: 1.00, scale: 0.5, stretch: true },
+      { name: 'strip x0.4',          y: 0.25, h: 0.50, scale: 0.4, stretch: true },
+      { name: 'strip x0.5 sharp',    y: 0.25, h: 0.50, scale: 0.5, sharpen: true }
+    ],
+
+    // One ZXing look: copy part of the video picture to a hidden canvas, turn it to grey, treat it as the
+    // current look says, and give it to ZXing.
     zxingLook: function (n) {
       var v = this.video, vw = v.videoWidth, vh = v.videoHeight;
       if (!vw || !vh) { return null; }
-      var kind = n % 4;
-      var region = (kind === 1) ? { x: 0, y: 0, w: vw, h: vh }
-        : (kind === 3) ? { x: 0, y: Math.round(vh * 0.25), w: vw, h: Math.round(vh * 0.5) }
-        : { x: 0, y: Math.round(vh * (kind === 0 ? 0.3 : 0.2)), w: vw, h: Math.round(vh * (kind === 0 ? 0.4 : 0.6)) };
-      var scale = Math.min(1, 1280 / region.w);
-      var cw = Math.round(region.w * scale), ch = Math.round(region.h * scale);
-      this.canvas.width = cw; this.canvas.height = ch;
-      var ctx = this.canvas.getContext('2d');
+      var st = this.stats;
+      var idx = st.looks % this.looks.length, look = this.looks[idx];   // st.looks counts ZXing looks only
+      this.lastSource = look.name;
+      st.byLook[idx].looks++;
+      var scale = Math.min(1, 1280 / vw) * look.scale;                   // 1280 pixels wide is the working size for scale 1
+      var region = { x: 0, y: Math.round(vh * look.y), w: vw, h: Math.round(vh * look.h) };
+      var cw = Math.max(1, Math.round(region.w * scale)), ch = Math.max(1, Math.round(region.h * scale));
+      if (this.canvas.width !== cw) { this.canvas.width = cw; }
+      if (this.canvas.height !== ch) { this.canvas.height = ch; }
+      var ctx = this.ctx;
       ctx.drawImage(v, region.x, region.y, region.w, region.h, 0, 0, cw, ch);
       var rgba = ctx.getImageData(0, 0, cw, ch).data;
       var grey = new Uint8ClampedArray(cw * ch);
       for (var i = 0, j = 0; j < grey.length; i += 4, j++) { grey[j] = (rgba[i] * 77 + rgba[i + 1] * 150 + rgba[i + 2] * 29) >> 8; }
-      var st = this.stats;
-      this.measurePicture(grey, cw, ch);
-      if (kind === 3) { this.stretchContrast(grey); }   // look 4: spread dark/bright values over the full range (helps with dull or blurry webcams)
+      if (idx === 0) { this.measurePicture(grey, cw, ch); }
+      if (look.stretch) { this.stretchContrast(grey); }
+      if (look.sharpen) { this.sharpen(grey, cw, ch); }
       var source = new ZXing.RGBLuminanceSource(grey, cw, ch);
-      var binarizer = (kind === 2) ? new ZXing.GlobalHistogramBinarizer(source) : new ZXing.HybridBinarizer(source);
       st.looks++;
-      try { return this.zxing.decode(new ZXing.BinaryBitmap(binarizer)).getText(); }
+      try { return this.zxing.decode(new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source))).getText(); }
       catch (e) {
         // "nothing found in this picture" is normal. Other kinds of failures mean "a barcode was seen but misread": count them.
         var nm = (e && (e.name || (e.constructor && e.constructor.name))) || 'Error';
         var kn = (e && typeof e.getKind === 'function') ? e.getKind() : nm;
         st.fails[kn] = (st.fails[kn] || 0) + 1;
         return null;
+      }
+    },
+
+    // Light sharpening across the bars: every pixel is pushed away from the average of its 5 horizontal neighbours.
+    sharpen: function (grey, cw, ch) {
+      var row = new Uint8ClampedArray(cw), x, y, a, k, base;
+      for (y = 0; y < ch; y++) {
+        base = y * cw;
+        for (x = 0; x < cw; x++) { row[x] = grey[base + x]; }
+        for (x = 0; x < cw; x++) {
+          a = 0;
+          for (k = -2; k <= 2; k++) { a += row[Math.min(cw - 1, Math.max(0, x + k))]; }
+          grey[base + x] = row[x] + (row[x] - a / 5);     // clamped to 0-255 by the Uint8ClampedArray
+        }
       }
     },
 
@@ -1474,13 +1516,13 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
 
     // ---------- Search statistics (only numbers, written to the log) ----------
     resetStats: function () {
-      this.stats = { looks: 0, fails: {}, errors: 0, contrastSum: 0, sharpSum: 0, measured: 0, startedAt: new Date().getTime(), lastReportAt: 0, reports: 0, builtInLooks: 0, builtInFound: 0 };
+      var by = []; for (var i = 0; i < this.looks.length; i++) { by.push({ looks: 0, hits: 0 }); }
+      this.stats = { looks: 0, fails: {}, errors: 0, contrastSum: 0, sharpSum: 0, measured: 0, startedAt: new Date().getTime(), reports: 0, builtInLooks: 0, msSum: 0, byLook: by, firstHit: false, hits: {} };
     },
     // Measure how contrasty and how sharp the picture is. Barcodes need both.
     // contrast = spread between dark and bright parts (0-255); sharpness = average step between neighbouring pixels.
     measurePicture: function (grey, cw, ch) {
       var st = this.stats;
-      if (st.looks % 8 !== 0) { return; }              // measuring every look is not needed
       var row = Math.floor(ch / 2) * cw, min = 255, max = 0, steps = 0, i;
       for (i = 0; i < cw; i++) { var g = grey[row + i]; if (g < min) { min = g; } if (g > max) { max = g; } if (i > 0) { steps += Math.abs(g - grey[row + i - 1]); } }
       st.contrastSum += (max - min); st.sharpSum += steps / (cw - 1); st.measured++;
@@ -1498,7 +1540,41 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
         ', internal errors: ' + st.errors +
         ', picture contrast ' + (st.measured ? Math.round(st.contrastSum / st.measured) : '?') + '/255 (low = dull picture)' +
         ', sharpness ' + (st.measured ? (st.sharpSum / st.measured).toFixed(1) : '?') + ' (very low = blurry picture)' +
-        ', built-in finder looks ' + st.builtInLooks);
+        ', built-in finder looks ' + st.builtInLooks +
+        ', average time per look ' + (st.looks ? Math.round(st.msSum / st.looks) : '?') + ' ms');
+      var per = [], self = this;
+      st.byLook.forEach(function (b, i) { per.push(self.looks[i].name + ' ' + b.looks + (b.hits ? ' (' + b.hits + ' hit)' : '')); });
+      Log.add('INFO', 'Looks used so far: ' + per.join('; '));
+    },
+    // Remember which kind of look found a barcode, and how long the first one took.
+    noteHit: function () {
+      var st = this.stats, src = this.lastSource || '?';
+      st.hits[src] = (st.hits[src] || 0) + 1;
+      for (var i = 0; i < this.looks.length; i++) { if (this.looks[i].name === src) { st.byLook[i].hits++; } }
+      if (!st.firstHit) {
+        st.firstHit = true;
+        Log.add('INFO', 'Time to first reading: ' + ((new Date().getTime() - st.startedAt) / 1000).toFixed(1) + ' s after the camera started showing a picture; found by: ' + src +
+          ' (after ' + st.looks + ' ZXing looks)');
+      }
+    },
+
+    // Describe what the camera can do about focus/zoom (numbers only, no device names), and ask for continuous
+    // focus. Webcams without a focus motor simply do not offer these options, which is also worth knowing.
+    setupFocus: function () {
+      var track = null, caps = null;
+      try { track = this.stream.getVideoTracks()[0]; caps = (track && track.getCapabilities) ? track.getCapabilities() : null; } catch (e) { caps = null; }
+      if (!track || !caps) { Log.add('INFO', 'Camera abilities: the browser does not tell (no focus information)'); return; }
+      function range(r) { return (r && r.min !== undefined) ? (r.min + '..' + r.max) : 'not offered'; }
+      var modes = caps.focusMode ? caps.focusMode.join('/') : 'not offered';
+      Log.add('INFO', 'Camera abilities: focusMode=' + modes + ', focusDistance=' + range(caps.focusDistance) + ', zoom=' + range(caps.zoom) +
+        ', resolution up to ' + (caps.width ? caps.width.max : '?') + 'x' + (caps.height ? caps.height.max : '?'));
+      var wanted = null;
+      if (caps.focusMode && caps.focusMode.indexOf('continuous') >= 0) { wanted = { focusMode: 'continuous' }; }
+      if (!wanted || !track.applyConstraints) { Log.add('INFO', 'Focus: no automatic focus available on this camera (fixed focus) - hold the barcode about 15-25 cm away'); return; }
+      track.applyConstraints({ advanced: [wanted] }).then(function () {
+        var s = track.getSettings ? track.getSettings() : {};
+        Log.add('INFO', 'Focus: continuous focus requested, camera now reports focusMode=' + (s.focusMode || 'unknown'));
+      }, function (e) { Log.add('WARN', 'Focus: continuous focus was refused (' + (e && e.name) + ')'); });
     },
 
     // ---------- Diagnostics: everything below only writes notes into the log; it never changes behaviour ----------
@@ -1712,13 +1788,13 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
   };
 
   // Update the camera boxes, buttons and status lines to match the scanner.
-  function updateCameraUI(message, isError) {
+  function updateCameraUI(message, isError, kind) {
     ['register', 'products'].forEach(function (m) {
       var active = Scanner.mode === m && Scanner.state !== 'off';
       $(m + 'Cam').className = 'camera' + (Scanner.mode === m && Scanner.state === 'on' ? ' on' : '');
       $(m + 'CamBtn').textContent = active ? t('stopCamera') : t('startCamera');
       $(m + 'CamBtn').className = 'btn' + (active ? ' red' : '');
-      if (message !== null && (Scanner.mode === m || message === '')) { setStatus(m + 'Status', message, isError); }   // null = only refresh the buttons
+      if (message !== null && (Scanner.mode === m || message === '')) { setStatus(m + 'Status', message, isError, kind); }   // null = only refresh the buttons
     });
   }
   // Brief colored frame around the camera: green = good, red = problem.
