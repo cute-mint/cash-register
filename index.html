@@ -90,6 +90,9 @@ textarea.field { min-height: 84px; resize: none; line-height: 1.3; }
 
 .status { min-height: 24px; margin: 4px 0 10px 0; font-size: 16px; color: #475569; }
 .status.error { color: #dc2626; font-weight: bold; }
+/* Two highlighted hints next to the camera: magenta = "please click once", teal = "hold the barcode steady" */
+.status.hint-click { background: #fdf4ff; border-left: 6px solid #d946ef; color: #a21caf; font-weight: bold; border-radius: 8px; padding: 8px 12px; }
+.status.hint-tip { background: #f0fdfa; border-left: 6px solid #14b8a6; color: #0f766e; border-radius: 8px; padding: 8px 12px; }
 .notice {
   background: #fef2f2; border: 2px solid #ef4444; border-radius: 12px; padding: 12px; margin: 10px 0; display: none;
 }
@@ -441,7 +444,8 @@ var TEXT = {
     cameraBusy: 'The camera is being used by another app. Close that app and try again.',
     cameraFailed: 'The camera could not be started. Please try again.',
     noPicture: 'The camera started but shows no picture. Close other apps or tabs that use the camera, then try again.',
-    cameraOn: 'Camera is on. Hold a barcode in front of it.',
+    tapToStart: 'Almost there: please click once anywhere on this page to start the camera picture.',
+    cameraOn: 'Camera is on. Hold the barcode steady in front of it. If the bars look blurry, move a little further away.',
 
     unknownItem: 'Oops! This item is not in the shop yet (barcode {code}).',
     added: 'Added: {name}',
@@ -578,7 +582,8 @@ var TEXT = {
     cameraBusy: 'Die Kamera wird von einer anderen App benutzt. Schliesse diese App und versuche es nochmal.',
     cameraFailed: 'Die Kamera konnte nicht gestartet werden. Bitte versuche es nochmal.',
     noPicture: 'Die Kamera wurde gestartet, zeigt aber kein Bild. Schliesse andere Apps oder Tabs, die die Kamera benutzen, und versuche es nochmal.',
-    cameraOn: 'Kamera ist an. Halte einen Strichcode davor.',
+    tapToStart: 'Fast geschafft: Bitte einmal irgendwo auf diese Seite klicken, dann startet das Kamerabild.',
+    cameraOn: 'Kamera ist an. Halte den Strichcode ruhig davor. Sind die Striche unscharf, gehe etwas weiter weg.',
 
     unknownItem: 'Hoppla! Dieser Artikel ist noch nicht im Laden (Strichcode {code}).',
     added: 'Hinzugefügt: {name}',
@@ -715,7 +720,8 @@ var TEXT = {
     cameraBusy: 'La fotocamera è usata da un\'altra app. Chiudi quell\'app e riprova.',
     cameraFailed: 'Impossibile avviare la fotocamera. Riprova.',
     noPicture: 'La fotocamera è partita ma non mostra nessuna immagine. Chiudi le altre app o schede che usano la fotocamera e riprova.',
-    cameraOn: 'La fotocamera è accesa. Tieni un codice a barre davanti.',
+    tapToStart: 'Quasi fatto: fai un clic ovunque su questa pagina per avviare l\'immagine della fotocamera.',
+    cameraOn: 'La fotocamera è accesa. Tieni il codice a barre fermo davanti. Se le barre sono sfocate, allontanati un po\'.',
 
     unknownItem: 'Ops! Questo articolo non è ancora nel negozio (codice {code}).',
     added: 'Aggiunto: {name}',
@@ -852,7 +858,8 @@ var TEXT = {
     cameraBusy: 'La caméra est utilisée par une autre appli. Ferme-la et réessaie.',
     cameraFailed: 'La caméra n\'a pas pu démarrer. Réessaie.',
     noPicture: 'La caméra a démarré mais n\'affiche aucune image. Ferme les autres applis ou onglets qui utilisent la caméra, puis réessaie.',
-    cameraOn: 'La caméra est allumée. Place un code-barres devant.',
+    tapToStart: 'Presque prêt : clique une fois n\'importe où sur cette page pour lancer l\'image de la caméra.',
+    cameraOn: 'La caméra est allumée. Tiens le code-barres immobile devant. Si les barres sont floues, éloigne-toi un peu.',
 
     unknownItem: 'Oups ! Cet article n\'est pas encore dans le magasin (code {code}).',
     added: 'Ajouté : {name}',
@@ -906,7 +913,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
   'use strict';
 
   var APP_NAME = 'kids-register';          // used in the backup file name
-  var APP_VERSION = '1.13';      // filled in automatically by the build script
+  var APP_VERSION = '1.14';      // filled in automatically by the build script
   var DATA_KEY = 'kidsRegister.data';      // where products + settings live in the browser
   var LOG_KEY = 'kidsRegister.log';        // where the problem report lives in the browser
 
@@ -984,10 +991,11 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
   }
 
   // Set a status line (a plain message, or a red error message).
-  function setStatus(id, message, isError) {
+  // kind (optional) = 'click' or 'tip' for the two highlighted camera hints.
+  function setStatus(id, message, isError, kind) {
     var s = $(id);
     s.textContent = message || '';
-    s.className = 'status' + (isError ? ' error' : '');
+    s.className = 'status' + (isError ? ' error' : '') + (kind ? ' hint-' + kind : '');
   }
 
   // Beeps are made with the browser's sound engine (no sound files needed).
@@ -1243,6 +1251,11 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
     zxing: null,         // the ZXing barcode finder
     canvas: null,        // hidden drawing area used to grab pictures from the video
     tick: 0,
+    playAnswered: true,  // false until the browser has answered the play() request
+    needClick: false,    // true while the browser refused to start the video and we wait for a click
+    hintShown: false,    // true once the "please click" hint is on screen
+    clickHandler: null,  // the waiting-for-a-click listener
+    lastLook: '',        // name of the look that made the last reading (for the log)
     loggedProblem: false,
     lastCode: '',
     lastTime: 0,
@@ -1252,6 +1265,8 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
       var self = this;
       var token = ++this.token;
       this.mode = mode;
+      this.needClick = false;
+      this.hintShown = false;
       this.video = $(mode + 'Video');
       Log.add('INFO', 'Camera start requested (' + mode + ' screen)');
 
@@ -1281,8 +1296,16 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
         v.setAttribute('playsinline', '');
         v.srcObject = stream;
         try {
+          self.playAnswered = false;
           var p = v.play();
-          if (p && p.catch) { p.catch(function (e) { Log.add('WARN', 'video.play() was refused: ' + (e && e.name)); }); }
+          if (p && p.then) {
+            p.then(function () { self.playAnswered = true; }, function (e) {
+              self.playAnswered = true;
+              Log.add('WARN', 'video.play() was refused: ' + (e && e.name));
+              // Chrome/Brave/Edge on a computer may only start a video after a click. Then we ask for one click.
+              if (token === self.token && e && e.name === 'NotAllowedError') { self.waitForClick(token); }
+            });
+          } else { self.playAnswered = true; }
         } catch (e2) { Log.add('WARN', 'video.play() failed: ' + e2.name); }
         // Step 3: wait until the first picture arrives, then start looking for barcodes.
         self.waitForPicture(token, new Date().getTime());
@@ -1322,15 +1345,54 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
       if (token !== this.token) { return; }
       var v = this.video;
       if (v.videoWidth > 0 && v.videoHeight > 0 && v.readyState >= 2) {
+        // The browser answers play() a moment later. Wait for that answer (at most 1.5 s) while the video is paused.
+        if (!this.playAnswered && v.paused && new Date().getTime() - startedAt < 1500) {
+          this.timer = setTimeout(function () { self.waitForPicture(token, startedAt); }, 50);
+          return;
+        }
+        if (this.needClick && v.paused) {
+          // The picture is there but frozen (black) until the user clicks. Show the hint and keep waiting.
+          if (!this.hintShown) { this.hintShown = true; Log.add('WARN', 'Video is paused until the user clicks - hint shown'); updateCameraUI(t('tapToStart'), false, 'click'); }
+          this.timer = setTimeout(function () { self.waitForPicture(token, startedAt); }, 100);
+          return;
+        }
         this.beginScanning(token);
         return;
       }
-      if (new Date().getTime() - startedAt > 8000) {
+      if (!this.needClick && new Date().getTime() - startedAt > 8000) {
         this.fail(t('noPicture'),
           'No picture after 8 seconds: readyState=' + v.readyState + ', size=' + v.videoWidth + 'x' + v.videoHeight + ', paused=' + v.paused);
         return;
       }
       this.timer = setTimeout(function () { self.waitForPicture(token, startedAt); }, 100);
+    },
+
+    // After a refusal, the next click or tap anywhere on the page counts as "permission" and starts the video.
+    waitForClick: function (token) {
+      var self = this;
+      this.needClick = true;
+      if (this.clickHandler) { return; }
+      this.clickHandler = function () {
+        self.removeClickWatch();
+        var v = self.video;
+        if (token !== self.token || !v) { return; }
+        Log.add('INFO', 'User clicked - starting the video again');
+        try {
+          var p = v.play();
+          if (p && p.then) {
+            p.then(function () { self.needClick = false; Log.add('INFO', 'video.play() worked after the click'); },
+                   function (e) { Log.add('WARN', 'video.play() refused again after the click: ' + (e && e.name)); self.needClick = false; });
+          } else { self.needClick = false; }
+        } catch (e2) { Log.add('WARN', 'video.play() failed after the click: ' + (e2 && e2.name)); self.needClick = false; }
+      };
+      document.addEventListener('click', this.clickHandler);
+      document.addEventListener('touchend', this.clickHandler);
+    },
+    removeClickWatch: function () {
+      if (!this.clickHandler) { return; }
+      document.removeEventListener('click', this.clickHandler);
+      document.removeEventListener('touchend', this.clickHandler);
+      this.clickHandler = null;
     },
 
     beginScanning: function (token) {
@@ -1357,7 +1419,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
         if (track && track.applyConstraints) { track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function () { /* optional */ }); }
       } catch (e3) { /* optional */ }
       Log.add('INFO', 'Camera is showing a picture (' + v.videoWidth + 'x' + v.videoHeight + '); built-in finder: ' + !!this.detector);
-      updateCameraUI(t('cameraOn'));
+      updateCameraUI(t('cameraOn'), false, 'tip');
       this.loop(token);
     },
 
@@ -1394,27 +1456,53 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
       });
     },
 
-    // Copy part of the video picture to a hidden canvas, turn it to grey, and give it to ZXing.
-    // Three different looks are rotated: the middle strip, the whole picture, and a taller strip
-    // with a different black/white method. This finds barcodes at many sizes and distances.
+    // The different "looks" taken one after the other. A look = which part of the picture, how big it is made,
+    // and what is done to it. A blurry webcam picture is read best when it is made smaller (the blur shrinks with
+    // it), so two small looks are included; they are also the cheapest ones, which saves battery and heat.
+    // y/h = part of the picture (0-1 from the top), scale = size factor, stretch = more contrast,
+    // global = another black/white method.
+    looks: [
+      { name: 'middle strip',        y: 0.30, h: 0.40, scale: 1.0 },
+      { name: 'tall strip',          y: 0.20, h: 0.60, scale: 1.0, global: true },
+      { name: 'whole picture',       y: 0.00, h: 1.00, scale: 1.0 },
+      { name: 'strip x0.7',          y: 0.25, h: 0.50, scale: 0.7, stretch: true },
+      { name: 'strip x0.5',          y: 0.25, h: 0.50, scale: 0.5, stretch: true }
+    ],
+
+    // Copy part of the video picture to a hidden canvas, turn it to grey, treat it as the current look says,
+    // and give it to ZXing.
     zxingLook: function (n) {
       var v = this.video, vw = v.videoWidth, vh = v.videoHeight;
       if (!vw || !vh) { return null; }
-      var kind = n % 3;
-      var region = (kind === 1) ? { x: 0, y: 0, w: vw, h: vh }
-        : { x: 0, y: Math.round(vh * (kind === 0 ? 0.3 : 0.2)), w: vw, h: Math.round(vh * (kind === 0 ? 0.4 : 0.6)) };
-      var scale = Math.min(1, 1280 / region.w);
-      var cw = Math.round(region.w * scale), ch = Math.round(region.h * scale);
+      var look = this.looks[n % this.looks.length];
+      this.lastLook = look.name;
+      var region = { x: 0, y: Math.round(vh * look.y), w: vw, h: Math.round(vh * look.h) };
+      var scale = Math.min(1, 1280 / region.w) * look.scale;
+      var cw = Math.max(1, Math.round(region.w * scale)), ch = Math.max(1, Math.round(region.h * scale));
       this.canvas.width = cw; this.canvas.height = ch;
       var ctx = this.canvas.getContext('2d');
       ctx.drawImage(v, region.x, region.y, region.w, region.h, 0, 0, cw, ch);
       var rgba = ctx.getImageData(0, 0, cw, ch).data;
       var grey = new Uint8ClampedArray(cw * ch);
       for (var i = 0, j = 0; j < grey.length; i += 4, j++) { grey[j] = (rgba[i] * 77 + rgba[i + 1] * 150 + rgba[i + 2] * 29) >> 8; }
+      if (look.stretch) { this.stretchContrast(grey); }
       var source = new ZXing.RGBLuminanceSource(grey, cw, ch);
-      var binarizer = (kind === 2) ? new ZXing.GlobalHistogramBinarizer(source) : new ZXing.HybridBinarizer(source);
+      var binarizer = look.global ? new ZXing.GlobalHistogramBinarizer(source) : new ZXing.HybridBinarizer(source);
       try { return this.zxing.decode(new ZXing.BinaryBitmap(binarizer)).getText(); }
       catch (e) { return null; }       // "nothing found in this picture" is normal and not an error
+    },
+
+    // Contrast stretching: the darkest 2% becomes black, the brightest 2% becomes white.
+    stretchContrast: function (grey) {
+      var hist = new Array(256).fill(0), i, total = grey.length;
+      for (i = 0; i < total; i++) { hist[grey[i]]++; }
+      var lo = 0, hi = 255, acc = 0;
+      for (i = 0; i < 256; i++) { acc += hist[i]; if (acc > total * 0.02) { lo = i; break; } }
+      acc = 0;
+      for (i = 255; i >= 0; i--) { acc += hist[i]; if (acc > total * 0.02) { hi = i; break; } }
+      if (hi - lo < 10) { return; }                    // flat picture: nothing to stretch
+      var k = 255 / (hi - lo);
+      for (i = 0; i < total; i++) { var val = (grey[i] - lo) * k; grey[i] = val < 0 ? 0 : (val > 255 ? 255 : val); }
     },
 
     stopStream: function (stream) {
@@ -1425,6 +1513,8 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
     stop: function (quiet) {
       this.token++;
       if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+      this.removeClickWatch();
+      this.needClick = false;
       if (this.stream) { this.stopStream(this.stream); this.stream = null; }
       if (this.video) { try { this.video.srcObject = null; } catch (e) { /* ignore */ } }
       var wasOn = this.state !== 'off';
@@ -1455,20 +1545,20 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
         return;
       }
       if (text.length === 12) { text = '0' + text; }
-      Log.add('INFO', 'Scanned barcode ' + text + ' (' + this.mode + ' screen)');
+      Log.add('INFO', 'Scanned barcode ' + text + ' (' + this.mode + ' screen, found by: ' + (this.detector ? 'built-in or ' : '') + this.lastLook + ')');
       flashCamera(this.mode, 'flash');
       if (this.mode === 'register') { onRegisterCode(text); } else if (this.mode === 'products') { onProductCode(text); }
     }
   };
 
   // Update the camera boxes, buttons and status lines to match the scanner.
-  function updateCameraUI(message, isError) {
+  function updateCameraUI(message, isError, kind) {
     ['register', 'products'].forEach(function (m) {
       var active = Scanner.mode === m && Scanner.state !== 'off';
       $(m + 'Cam').className = 'camera' + (Scanner.mode === m && Scanner.state === 'on' ? ' on' : '');
       $(m + 'CamBtn').textContent = active ? t('stopCamera') : t('startCamera');
       $(m + 'CamBtn').className = 'btn' + (active ? ' red' : '');
-      if (message !== null && (Scanner.mode === m || message === '')) { setStatus(m + 'Status', message, isError); }   // null = only refresh the buttons
+      if (message !== null && (Scanner.mode === m || message === '')) { setStatus(m + 'Status', message, isError, kind); }   // null = only refresh the buttons
     });
   }
   // Brief colored frame around the camera: green = good, red = problem.
