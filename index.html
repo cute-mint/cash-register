@@ -442,6 +442,7 @@ var TEXT = {
     cameraFailed: 'The camera could not be started. Please try again.',
     noPicture: 'The camera started but shows no picture. Close other apps or tabs that use the camera, then try again.',
     cameraOn: 'Camera is on. Hold a barcode in front of it.',
+    tapToStart: 'The camera is ready, but your browser has not started the picture yet. Please click once anywhere on this page.',
 
     unknownItem: 'Oops! This item is not in the shop yet (barcode {code}).',
     added: 'Added: {name}',
@@ -579,6 +580,7 @@ var TEXT = {
     cameraFailed: 'Die Kamera konnte nicht gestartet werden. Bitte versuche es nochmal.',
     noPicture: 'Die Kamera wurde gestartet, zeigt aber kein Bild. Schliesse andere Apps oder Tabs, die die Kamera benutzen, und versuche es nochmal.',
     cameraOn: 'Kamera ist an. Halte einen Strichcode davor.',
+    tapToStart: 'Die Kamera ist bereit, aber dein Browser hat das Bild noch nicht gestartet. Bitte klicke einmal irgendwo auf diese Seite.',
 
     unknownItem: 'Hoppla! Dieser Artikel ist noch nicht im Laden (Strichcode {code}).',
     added: 'Hinzugefügt: {name}',
@@ -716,6 +718,7 @@ var TEXT = {
     cameraFailed: 'Impossibile avviare la fotocamera. Riprova.',
     noPicture: 'La fotocamera è partita ma non mostra nessuna immagine. Chiudi le altre app o schede che usano la fotocamera e riprova.',
     cameraOn: 'La fotocamera è accesa. Tieni un codice a barre davanti.',
+    tapToStart: 'La fotocamera è pronta, ma il browser non ha ancora avviato l\'immagine. Fai un clic ovunque su questa pagina.',
 
     unknownItem: 'Ops! Questo articolo non è ancora nel negozio (codice {code}).',
     added: 'Aggiunto: {name}',
@@ -853,6 +856,7 @@ var TEXT = {
     cameraFailed: 'La caméra n\'a pas pu démarrer. Réessaie.',
     noPicture: 'La caméra a démarré mais n\'affiche aucune image. Ferme les autres applis ou onglets qui utilisent la caméra, puis réessaie.',
     cameraOn: 'La caméra est allumée. Place un code-barres devant.',
+    tapToStart: 'La caméra est prête, mais ton navigateur n\'a pas encore lancé l\'image. Clique une fois n\'importe où sur cette page.',
 
     unknownItem: 'Oups ! Cet article n\'est pas encore dans le magasin (code {code}).',
     added: 'Ajouté : {name}',
@@ -906,7 +910,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
   'use strict';
 
   var APP_NAME = 'kids-register';          // used in the backup file name
-  var APP_VERSION = '1.9';      // filled in automatically by the build script
+  var APP_VERSION = '1.10';      // filled in automatically by the build script
   var DATA_KEY = 'kidsRegister.data';      // where products + settings live in the browser
   var LOG_KEY = 'kidsRegister.log';        // where the problem report lives in the browser
 
@@ -1084,6 +1088,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
       head.push('Browser: ' + navigator.userAgent);
       head.push('Screen: ' + screen.width + 'x' + screen.height + ' (window ' + window.innerWidth + 'x' + window.innerHeight + ', pixel ratio ' + (window.devicePixelRatio || 1) + ')');
       head.push('Page type: ' + location.protocol + ' (secure page: ' + (window.isSecureContext === undefined ? 'unknown' : window.isSecureContext) + ')');
+      head.push('Brave browser: ' + (navigator.brave ? 'yes (Brave-specific API present)' : 'no / not detectable'));
       head.push('Camera available in browser: ' + !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
       head.push('Home Screen app: ' + (window.navigator.standalone === true) + ', print as PDF: ' + (typeof printNeedsPdf === 'function' ? printNeedsPdf() : 'n/a'));
       head.push('Barcode reader loaded: ' + (typeof ZXing !== 'undefined'));
@@ -1243,6 +1248,12 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
     zxing: null,         // the ZXing barcode finder
     canvas: null,        // hidden drawing area used to grab pictures from the video
     tick: 0,
+    playAttempts: 0,     // how many times we asked the video to play (for the log)
+    lastPlayResult: '',  // what happened the last time (for the log)
+    hintShown: false,    // true once the "click the picture" hint has been shown
+    clickHandler: null,  // waits for a click after the browser refused to play the video
+    undoWatch: null,     // cleanup functions for the diagnostic listeners
+    watchTimers: null,   // timers for the diagnostic snapshots
     loggedProblem: false,
     lastCode: '',
     lastTime: 0,
@@ -1252,6 +1263,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
       var self = this;
       var token = ++this.token;
       this.mode = mode;
+      this.hintShown = false;
       this.video = $(mode + 'Video');
       Log.add('INFO', 'Camera start requested (' + mode + ' screen)');
 
@@ -1267,6 +1279,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
 
       this.state = 'starting';
       updateCameraUI(t('startingCamera'));
+      this.logEnvironment();
 
       // Step 1: ask for the camera (the back camera if there is one).
       this.openCamera().then(function (stream) {
@@ -1279,11 +1292,11 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
         var v = self.video;
         v.muted = true;
         v.setAttribute('playsinline', '');
+        self.playAttempts = 0;
+        self.lastPlayResult = 'not tried';
+        self.watchCamera(token, stream, v);          // detailed diagnostic notes for the log (see below)
         v.srcObject = stream;
-        try {
-          var p = v.play();
-          if (p && p.catch) { p.catch(function (e) { Log.add('WARN', 'video.play() was refused: ' + (e && e.name)); }); }
-        } catch (e2) { Log.add('WARN', 'video.play() failed: ' + e2.name); }
+        self.tryPlay(token, 'start');
         // Step 3: wait until the first picture arrives, then start looking for barcodes.
         self.waitForPicture(token, new Date().getTime());
       }).catch(function (e) {
@@ -1321,8 +1334,20 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
       var self = this;
       if (token !== this.token) { return; }
       var v = this.video;
-      if (v.videoWidth > 0 && v.videoHeight > 0 && v.readyState >= 2) {
+      var hasPicture = v.videoWidth > 0 && v.videoHeight > 0 && v.readyState >= 2;
+      if (hasPicture && !v.paused) {
         this.beginScanning(token);
+        return;
+      }
+      if (hasPicture && v.paused) {
+        // The browser (e.g. Brave) refused to start the video by itself. A picture is there, but it is
+        // frozen and shows black. Ask the user to click once; any click on the page starts the video.
+        if (!this.hintShown) {
+          this.hintShown = true;
+          Log.add('WARN', 'Video is paused although the camera delivers a picture - asking the user to click (' + this.describeVideo(v) + ')');
+          updateCameraUI(t('tapToStart'));
+        }
+        this.timer = setTimeout(function () { self.waitForPicture(token, startedAt); }, 100);
         return;
       }
       if (new Date().getTime() - startedAt > 8000) {
@@ -1376,6 +1401,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
     lookOnce: function () {
       var self = this;
       var n = this.tick++;
+      if (this.video.paused) { return Promise.resolve(null); }   // a frozen picture shows nothing new
       if (this.detector && n % 2 === 0) {
         return this.detector.detect(this.video).then(function (codes) {
           return (codes && codes.length) ? codes[0].rawValue : null;
@@ -1417,6 +1443,171 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
       catch (e) { return null; }       // "nothing found in this picture" is normal and not an error
     },
 
+    // ---------- Diagnostics: everything below only writes notes into the log; it never changes behaviour ----------
+
+    // One line describing the state of the video box (is it paused? does it have a picture? is it visible?).
+    describeVideo: function (v) {
+      try {
+        var cs = window.getComputedStyle(v);
+        return 'paused=' + v.paused + ', readyState=' + v.readyState + ', networkState=' + v.networkState +
+          ', picture=' + v.videoWidth + 'x' + v.videoHeight + ', time=' + (v.currentTime || 0).toFixed(2) + ', ended=' + v.ended +
+          ', onScreen=' + v.clientWidth + 'x' + v.clientHeight + ', display=' + cs.display + ', visibility=' + cs.visibility +
+          ', opacity=' + cs.opacity + ', error=' + (v.error ? v.error.code : 'none');
+      } catch (e) { return 'could not read video state (' + (e && e.name) + ')'; }
+    },
+
+    // One line describing the camera track (is it live? muted by the browser or system?).
+    describeTrack: function (stream) {
+      try {
+        var tr = stream.getVideoTracks()[0];
+        if (!tr) { return 'no video track'; }
+        var s = tr.getSettings ? tr.getSettings() : {};
+        return 'track readyState=' + tr.readyState + ', enabled=' + tr.enabled + ', muted=' + tr.muted +
+          ', settings=' + (s.width || '?') + 'x' + (s.height || '?') + '@' + (s.frameRate ? Math.round(s.frameRate) : '?') + 'fps';
+      } catch (e) { return 'could not read track state (' + (e && e.name) + ')'; }
+    },
+
+    // Average brightness (0 = completely black, 255 = completely white) of the current picture.
+    // Only the average and the brightest pixel are logged; the picture itself is never stored.
+    brightness: function (v) {
+      try {
+        var c = document.createElement('canvas');
+        c.width = 16; c.height = 9;
+        var ctx = c.getContext('2d');
+        ctx.drawImage(v, 0, 0, 16, 9);
+        var d = ctx.getImageData(0, 0, 16, 9).data, sum = 0, max = 0, n = 0;
+        for (var i = 0; i < d.length; i += 4) {
+          var g = (d[i] + d[i + 1] + d[i + 2]) / 3;
+          sum += g; n++; if (g > max) { max = g; }
+        }
+        return { avg: Math.round(sum / n), max: Math.round(max) };
+      } catch (e) { return { error: (e && e.name) || 'Error' }; }
+    },
+
+    // Notes about the computer and browser at the moment the camera is started.
+    logEnvironment: function () {
+      var parts = [];
+      parts.push('visible=' + document.visibilityState);
+      try { parts.push('windowFocus=' + document.hasFocus()); } catch (e) { /* ignore */ }
+      parts.push('page=' + location.protocol + ', secure=' + window.isSecureContext);
+      parts.push('platform=' + (navigator.platform || '?') + ', language=' + (navigator.language || '?'));
+      parts.push('builtInBarcodeFinderExists=' + !!window.BarcodeDetector);
+      Log.add('INFO', 'Camera environment: ' + parts.join(', '));
+      try {
+        if (navigator.brave && navigator.brave.isBrave) {
+          navigator.brave.isBrave().then(function (yes) { Log.add('INFO', 'Brave browser detected: ' + yes + ' (its Shields can block video autoplay)'); }, function () { /* ignore */ });
+        }
+      } catch (e) { /* ignore */ }
+      try {
+        if (navigator.mediaDevices.enumerateDevices) {
+          navigator.mediaDevices.enumerateDevices().then(function (list) {
+            var cams = 0; list.forEach(function (d) { if (d.kind === 'videoinput') { cams++; } });
+            Log.add('INFO', 'Number of cameras found: ' + cams);   // only the number, never names or IDs
+          }, function (e) { Log.add('WARN', 'Could not count cameras: ' + (e && e.name)); });
+        }
+      } catch (e) { /* ignore */ }
+    },
+
+    // Try to start the video. Called at the start and again whenever the browser might now allow it.
+    tryPlay: function (token, reason) {
+      var self = this, v = this.video;
+      if (token !== this.token || !v) { return; }
+      var attempt = ++this.playAttempts;
+      try {
+        var p = v.play();
+        if (p && p.then) {
+          p.then(function () {
+            self.lastPlayResult = 'ok (' + reason + ')';
+            Log.add('INFO', 'video.play() attempt #' + attempt + ' (' + reason + ') worked');
+          }, function (e) {
+            self.lastPlayResult = 'refused: ' + (e && e.name) + ' (' + reason + ')';
+            Log.add('WARN', 'video.play() attempt #' + attempt + ' (' + reason + ') was refused: ' + (e && e.name) + ' - ' + ((e && e.message) || ''));
+            if (token === self.token && e && e.name === 'NotAllowedError') { self.waitForClick(token); }
+          });
+        } else {
+          self.lastPlayResult = 'no promise returned (' + reason + ')';
+          Log.add('INFO', 'video.play() attempt #' + attempt + ' (' + reason + ') returned no answer');
+        }
+      } catch (e2) {
+        this.lastPlayResult = 'threw: ' + (e2 && e2.name) + ' (' + reason + ')';
+        Log.add('WARN', 'video.play() attempt #' + attempt + ' (' + reason + ') failed: ' + (e2 && e2.name));
+      }
+    },
+
+    // After a refusal, the next click or tap anywhere on the page counts as "permission" and starts the video.
+    waitForClick: function (token) {
+      var self = this;
+      if (this.clickHandler) { return; }
+      this.clickHandler = function () {
+        self.removeClickWatch();
+        Log.add('INFO', 'User clicked the page while the video was paused - trying to start it again');
+        self.tryPlay(token, 'user click');
+      };
+      document.addEventListener('click', this.clickHandler);
+      document.addEventListener('touchend', this.clickHandler);
+    },
+    removeClickWatch: function () {
+      if (!this.clickHandler) { return; }
+      document.removeEventListener('click', this.clickHandler);
+      document.removeEventListener('touchend', this.clickHandler);
+      this.clickHandler = null;
+    },
+
+    // Listen to what the video and the camera track report, and take "snapshots" of their state
+    // after 0.5, 1, 3 and 6 seconds. All of it goes into the log.
+    watchCamera: function (token, stream, v) {
+      var self = this;
+      this.clearWatch();
+      Log.add('INFO', 'Camera ' + this.describeTrack(stream));
+      var undo = [];
+      ['loadedmetadata', 'loadeddata', 'canplay', 'playing', 'pause', 'stalled', 'suspend', 'error', 'emptied'].forEach(function (name) {
+        var fn = function () {
+          if (token !== self.token) { return; }
+          Log.add('INFO', 'Video event "' + name + '": ' + self.describeVideo(v));
+          // The browser may allow playing now that the video knows its size.
+          if ((name === 'loadedmetadata' || name === 'canplay') && v.paused) { self.tryPlay(token, 'event ' + name); }
+        };
+        v.addEventListener(name, fn);
+        undo.push(function () { v.removeEventListener(name, fn); });
+      });
+      var tr = stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+      if (tr && tr.addEventListener) {
+        ['mute', 'unmute', 'ended'].forEach(function (name) {
+          var fn = function () { if (token === self.token) { Log.add('WARN', 'Camera track event "' + name + '": ' + self.describeTrack(stream)); } };
+          tr.addEventListener(name, fn);
+          undo.push(function () { tr.removeEventListener(name, fn); });
+        });
+      }
+      this.undoWatch = undo;
+      this.watchTimers = [500, 1000, 3000, 6000].map(function (ms, i) {
+        return setTimeout(function () {
+          if (token !== self.token) { return; }
+          var line = 'Snapshot after ' + ms + ' ms: ' + self.describeVideo(v) + '; ' + self.describeTrack(stream) + '; attempts=' + self.playAttempts;
+          var b = null;
+          if (i > 0) { b = self.brightness(v); line += '; brightness=' + (b.error ? 'unreadable (' + b.error + ')' : b.avg + '/255 (brightest spot ' + b.max + ')'); }
+          Log.add('INFO', line);
+          if (i === 3) { self.logDiagnosis(v, stream, b); }
+        }, ms);
+      });
+    },
+    clearWatch: function () {
+      if (this.undoWatch) { this.undoWatch.forEach(function (fn) { try { fn(); } catch (e) { /* ignore */ } }); this.undoWatch = null; }
+      if (this.watchTimers) { this.watchTimers.forEach(clearTimeout); this.watchTimers = null; }
+      this.removeClickWatch();
+    },
+
+    // One summary line saying what the notes above most likely mean.
+    logDiagnosis: function (v, stream, b) {
+      var verdict;
+      var tr = stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+      if (v.paused) { verdict = 'VIDEO NOT RUNNING: the browser did not allow the video to play (last result: ' + this.lastPlayResult + ')'; }
+      else if (tr && tr.muted) { verdict = 'CAMERA TRACK MUTED: the browser or Windows delivers no frames (check Windows camera privacy settings / other apps)'; }
+      else if (b && b.error) { verdict = 'COULD NOT MEASURE the picture (' + b.error + ')'; }
+      else if (b && b.max <= 8) { verdict = 'PICTURE IS BLACK although the video is running (camera cover, privacy shutter, or browser blocks the picture)'; }
+      else { verdict = 'looks fine: video is running and the picture has content'; }
+      Log.add(verdict.indexOf('looks fine') === 0 ? 'INFO' : 'WARN', 'DIAGNOSIS after 6 s: ' + verdict + '. Play attempts: ' + this.playAttempts + ', last: ' + this.lastPlayResult);
+    },
+
     stopStream: function (stream) {
       try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { /* ignore */ }
     },
@@ -1425,6 +1616,7 @@ var languageNames = { en: 'English', de: 'Deutsch', it: 'Italiano', fr: 'França
     stop: function (quiet) {
       this.token++;
       if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+      this.clearWatch();
       if (this.stream) { this.stopStream(this.stream); this.stream = null; }
       if (this.video) { try { this.video.srcObject = null; } catch (e) { /* ignore */ } }
       var wasOn = this.state !== 'off';
